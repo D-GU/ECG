@@ -6,22 +6,9 @@ import matplotlib.pyplot as plt
 _CHANEL = 12
 
 
-# Reading data from np.array file
+# Reading data from file
 def _get_raw_data(_path: str):
     return np.load(_path)
-
-
-# Showing graphs of ECG(_plot1 - RAW file data, _plot2 - gen data)
-def show_plot(_plot1: np.array, _plot2: np.array, _title: str) -> None:
-    plt.rcParams['figure.figsize'] = [20, 5]
-    plt.rcParams['font.size'] = 14
-
-    plt.plot(_plot1, 'b-', label='Raw data')
-    plt.plot(_plot2, 'r-', label='Clean data')
-    plt.legend(["Raw data", "Clean data"])
-    plt.show()
-
-    return None
 
 
 def show_multiple_plots(_plots: np.array, _titles: np.array):
@@ -29,27 +16,43 @@ def show_multiple_plots(_plots: np.array, _titles: np.array):
     plt.rcParams['font.size'] = 14
 
     for plots, titles in zip(_plots, _titles):
-        plt.plot(plots, label=titles )
+        plt.plot(plots, label=titles)
         plt.legend(np.array(_titles))
 
     plt.show()
 
 
+def preprocess(_ecg_signal):
+    # Get preprocessed data from the signal
+    _ecg_data, _ = nk.ecg_process(_ecg_signal,
+                                  sampling_rate=100)
+
+    # Get cleaned signal from the data frame, so we can find peaks
+    _ecg_clean_signal = np.array(_ecg_data["ECG_Clean"])
+
+    # Get peaks from the cleaned signal
+    _instant_peaks, _r_peaks = nk.ecg_peaks(_ecg_clean_signal,
+                                            sampling_rate=100)
+
+    # Getting the rate based on the signal peaks
+    rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
+                       desired_length=len(_ecg_clean_signal))
+
+    _signals = pd.DataFrame({"ECG_Raw": _ecg_signal,
+                             "ECG_Clean": _ecg_clean_signal,
+                             "ECG_Rate": rate})
+
+    _info = _r_peaks
+
+    return _signals, _info
+
+
 # Get raw data
-_ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
+ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
 
 # generated data
-_ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
+ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
-# Get pre-processed data from one of the signals
-signals, info = nk.ecg_process(_ecg_raw_data[0][0:, _CHANEL - 1], sampling_rate=100)
+signals, info = preprocess(ecg_raw_data[0][::, _CHANEL - 1])
 
-# Get cleaned signal
-_ecg_clean_data = np.array(signals["ECG_Clean"])
-
-df = pd.DataFrame(signals)
-
-_plots = np.array((_ecg_raw_data[0][0:, _CHANEL - 1], _ecg_clean_data))
-_titles = np.array(("Raw data", "Clean data"))
-
-show_multiple_plots(_plots, _titles)
+nk.events_plot(info['ECG_R_Peaks'], signals['ECG_Clean'])
