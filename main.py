@@ -32,7 +32,8 @@ def preprocess(_ecg_signal):
 
     # Get peaks from the cleaned signal
     _instant_peaks, _r_peaks = nk.ecg_peaks(_ecg_clean_signal,
-                                            sampling_rate=100)
+                                            sampling_rate=100,
+                                            method='hamilton2002')
 
     # Getting the rate based on the signal peaks
     rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
@@ -53,6 +54,25 @@ ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
 # generated data
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
-signals, info = preprocess(ecg_raw_data[0][::, _CHANEL - 1])
+# Take signal from data
+_signal = ecg_raw_data[0][:, _CHANEL - 1]
 
-nk.events_plot(info['ECG_R_Peaks'], signals['ECG_Clean'])
+signals, r_peaks = preprocess(_signal)
+
+_signal_cleaned = nk.ecg_clean(_signal, sampling_rate=100)
+
+# show_multiple_plots((_signal, _signal_cleaned), ("Raw signal", "Cleaned signal"))
+
+# for i in range(len(info['ECG_R_Peaks']) - 1):
+# print(f"R = {info['ECG_R_Peaks'][i]}, R1 = {info['ECG_R_Peaks'][i + 1]}")
+
+# show_multiple_plots((_signal, signals['ECG_Clean']), ("r", "g"))
+
+
+# nk.events_plot(info['ECG_R_Peaks'], signals['ECG_Clean'])
+# print(ecg_generated)
+
+# wd, m = hp.process(_signal, sample_rate=100)
+
+# plt.figure(figsize=(12, 4))
+# hp.plotter(wd, m)
