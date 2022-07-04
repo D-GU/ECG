@@ -32,8 +32,7 @@ def preprocess(_ecg_signal):
 
     # Get peaks from the cleaned signal
     _instant_peaks, _r_peaks = nk.ecg_peaks(_ecg_clean_signal,
-                                            sampling_rate=100,
-                                            method='hamilton2002')
+                                            sampling_rate=100)
 
     # Getting the rate based on the signal peaks
     rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
@@ -48,6 +47,18 @@ def preprocess(_ecg_signal):
     return _signals, _info
 
 
+def get_r_r_interval(_r_peaks: np.array):
+    return np.array(
+        [(60000 / np.abs(_r_peaks[i] - _r_peaks[i + 1]) / 1000) for i in range(len(_r_peaks) - 1)]
+    )
+
+
+def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
+    _signals, _waves_peak = nk.ecg_delineate(_cleaned_signal, rpeaks=_r_peaks, sampling_rate=100)
+
+    return _signals, _waves_peak
+
+
 # Get raw data
 ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
 
@@ -55,24 +66,27 @@ ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
 # Take signal from data
-_signal = ecg_raw_data[0][:, _CHANEL - 1]
+raw_signal = ecg_raw_data[0][:, _CHANEL - 1]
 
-signals, r_peaks = preprocess(_signal)
+# Get preprocessed data, such as cleaned signal, R-Peaks etc
+signals, info = preprocess(raw_signal)
 
-_signal_cleaned = nk.ecg_clean(_signal, sampling_rate=100)
+# Cleaned ECG signal
+clean_signal = signals['ECG_Clean']
 
-# show_multiple_plots((_signal, _signal_cleaned), ("Raw signal", "Cleaned signal"))
+# Get R-Peaks
+r_peaks = info['ECG_R_Peaks']
 
-# for i in range(len(info['ECG_R_Peaks']) - 1):
-# print(f"R = {info['ECG_R_Peaks'][i]}, R1 = {info['ECG_R_Peaks'][i + 1]}")
+# Get Q-Peaks, S-Peaks, T-Peaks
+_, all_peaks = get_qst_peaks(clean_signal, r_peaks)
 
-# show_multiple_plots((_signal, signals['ECG_Clean']), ("r", "g"))
+q_peaks = all_peaks['ECG_Q_Peaks']
+t_peaks = all_peaks['ECG_T_Peaks']
+s_peaks = all_peaks['ECG_S_Peaks']
 
 
-# nk.events_plot(info['ECG_R_Peaks'], signals['ECG_Clean'])
-# print(ecg_generated)
+# Get r-r intervals in ms
+r_r_intervals = get_r_r_interval(r_peaks)
 
-# wd, m = hp.process(_signal, sample_rate=100)
-
-# plt.figure(figsize=(12, 4))
-# hp.plotter(wd, m)
+# Get mean r-r value
+r_r_mean = np.mean(r_r_intervals)
