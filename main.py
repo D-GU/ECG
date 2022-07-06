@@ -35,12 +35,12 @@ def preprocess(_ecg_signal):
                                             sampling_rate=100)
 
     # Getting the rate based on the signal peaks
-    rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
-                       desired_length=len(_ecg_clean_signal))
+    _rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
+                        desired_length=len(_ecg_clean_signal))
 
     _signals = pd.DataFrame({"ECG_Raw": _ecg_signal,
                              "ECG_Clean": _ecg_clean_signal,
-                             "ECG_Rate": rate})
+                             "ECG_Rate": _rate})
 
     _info = _r_peaks
 
@@ -54,7 +54,15 @@ def get_r_r_interval(_r_peaks: np.array):
 
 
 def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
-    _signals, _waves_peak = nk.ecg_delineate(_cleaned_signal, rpeaks=_r_peaks, sampling_rate=100)
+    # Calculate and show QRS TP complex
+    _signals, _waves_peak = nk.ecg_delineate(
+        _cleaned_signal,
+        rpeaks=_r_peaks,
+        sampling_rate=100,
+        method='dwt',
+        show=True,
+        show_type='peaks'
+    )
 
     return _signals, _waves_peak
 
@@ -78,12 +86,16 @@ clean_signal = signals['ECG_Clean']
 r_peaks = info['ECG_R_Peaks']
 
 # Get Q-Peaks, S-Peaks, T-Peaks
-_, all_peaks = get_qst_peaks(clean_signal, r_peaks)
+_, all_peaks = get_qst_peaks(raw_signal, r_peaks)
 
-q_peaks = all_peaks['ECG_Q_Peaks']
-t_peaks = all_peaks['ECG_T_Peaks']
-s_peaks = all_peaks['ECG_S_Peaks']
+df = pd.DataFrame({
+    "ECG_Q_Peaks": all_peaks['ECG_Q_Peaks'],
+    "ECG_T_Peaks": all_peaks['ECG_T_Peaks'],
+    "ECG_S_Peaks": all_peaks['ECG_S_Peaks'],
+    "ECG_P_Peaks": all_peaks['ECG_P_Peaks']}
+)
 
+print(df)
 
 # Get r-r intervals in ms
 r_r_intervals = get_r_r_interval(r_peaks)
