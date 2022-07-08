@@ -114,3 +114,4 @@ r_r_intervals = get_r_r_interval(r_peaks)
 
 # Get mean r-r value
 r_r_mean = np.mean(r_r_intervals)
+
