@@ -3,7 +3,7 @@ import pandas as pd
 import neurokit2 as nk
 import matplotlib.pyplot as plt
 
-_CHANEL = 12
+CHANEL = 12
 
 
 # Reading data from file
@@ -47,10 +47,20 @@ def preprocess(_ecg_signal):
     return _signals, _info
 
 
-def get_r_r_interval(_r_peaks: np.array):
+def get_r_r_interval(_r_peaks: np.array) -> np.array:
     return np.array(
         [(60000 / np.abs(_r_peaks[i] - _r_peaks[i + 1]) / 1000) for i in range(len(_r_peaks) - 1)]
     )
+
+
+def get_interval(_x_peaks: np.array, _y_peaks: np.array):
+    return np.array(
+        [(60000 / np.abs(_x_peaks[i] - _y_peaks[i]) / 1000) for i in range(len(_y_peaks))]
+    )
+
+
+def get_heart_cycle(_heart_rate: np.array):
+    return 60 / np.mean(_heart_rate)
 
 
 def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
@@ -74,7 +84,7 @@ ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
 # Take signal from data
-raw_signal = ecg_raw_data[0][:, _CHANEL - 1]
+raw_signal = ecg_raw_data[0][:, CHANEL - 1]
 
 # Get preprocessed data, such as cleaned signal, R-Peaks etc
 signals, info = preprocess(raw_signal)
@@ -95,7 +105,9 @@ df = pd.DataFrame({
     "ECG_P_Peaks": all_peaks['ECG_P_Peaks']}
 )
 
-print(df)
+# Get heart rate and heart cycle
+heart_rate = signals["ECG_Rate"]
+heart_cycle = get_heart_cycle(heart_rate)
 
 # Get r-r intervals in ms
 r_r_intervals = get_r_r_interval(r_peaks)
