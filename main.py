@@ -7,7 +7,7 @@ CHANEL = 12
 
 
 # Reading data from file
-def _get_raw_data(_path: str):
+def get_raw_data(_path: str):
     return np.load(_path)
 
 
@@ -78,13 +78,13 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
 
 
 # Get raw data
-ecg_raw_data = _get_raw_data("ecg_ptbxl.npy")
+ecg_raw_data = get_raw_data("ecg_ptbxl.npy")
 
 # generated data
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
 # Take signal from data
-raw_signal = ecg_raw_data[0][:, CHANEL - 1]
+raw_signal = ecg_raw_data[0][:, 0]
 
 # Get preprocessed data, such as cleaned signal, R-Peaks etc
 signals, info = preprocess(raw_signal)
@@ -115,3 +115,16 @@ r_r_intervals = get_r_r_interval(r_peaks)
 # Get mean r-r value
 r_r_mean = np.mean(r_r_intervals)
 
+t_peaks = all_peaks['ECG_T_Peaks']
+p_peaks = all_peaks['ECG_P_Peaks']
+q_peaks = all_peaks['ECG_Q_Peaks']
+
+t_rate = nk.signal_rate(t_peaks, sampling_rate=100)
+p_rate = nk.signal_rate(p_peaks, sampling_rate=100)
+q_rate = nk.signal_rate(q_peaks, sampling_rate=100)
+
+t_period = nk.signal_period(t_peaks, sampling_rate=100)
+p_period = nk.signal_period(p_peaks, sampling_rate=100)
+q_period = nk.signal_period(q_peaks, sampling_rate=100)
+
+qt = get_interval(t_peaks, q_peaks)
