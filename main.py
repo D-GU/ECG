@@ -47,16 +47,15 @@ def preprocess(_ecg_signal):
     return _signals, _info
 
 
-def get_r_r_interval(_r_peaks: np.array) -> np.array:
-    return np.array(
-        [(60000 / np.abs(_r_peaks[i] - _r_peaks[i + 1]) / 1000) for i in range(len(_r_peaks) - 1)]
-    )
-
-
-def get_interval(_x_peaks: np.array, _y_peaks: np.array):
-    return np.array(
-        [(60000 / np.abs(_x_peaks[i] - _y_peaks[i]) / 1000) for i in range(len(_y_peaks))]
-    )
+def get_intervals(_x_peaks: np.array, interval: str, *_y_peaks: np.array):
+    if interval.lower() in ['rr', 'r-r', 'r_r']:
+        return np.array(
+            [np.abs(_x_peaks[i] - _x_peaks[i + 1]) for i in range(len(_x_peaks) - 1)]
+        )
+    else:
+        return np.array(
+            [np.abs(_x_peaks[i] - _y_peaks[i]) for i in range(len(_x_peaks))]
+        )
 
 
 def get_heart_cycle(_heart_rate: np.array):
@@ -83,7 +82,7 @@ ecg_raw_data = get_raw_data("ecg_ptbxl.npy")
 # generated data
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
-# Take signal from data
+# Take signal from data (I lead)
 raw_signal = ecg_raw_data[0][:, 0]
 
 # Get preprocessed data, such as cleaned signal, R-Peaks etc
@@ -109,22 +108,12 @@ df = pd.DataFrame({
 heart_rate = signals["ECG_Rate"]
 heart_cycle = get_heart_cycle(heart_rate)
 
-# Get r-r intervals in ms
-r_r_intervals = get_r_r_interval(r_peaks)
-
-# Get mean r-r value
-r_r_mean = np.mean(r_r_intervals)
-
-t_peaks = all_peaks['ECG_T_Peaks']
-p_peaks = all_peaks['ECG_P_Peaks']
-q_peaks = all_peaks['ECG_Q_Peaks']
-
-t_rate = nk.signal_rate(t_peaks, sampling_rate=100)
-p_rate = nk.signal_rate(p_peaks, sampling_rate=100)
-q_rate = nk.signal_rate(q_peaks, sampling_rate=100)
+# Init all peaks
+q_peaks = np.array([peak / 100 for peak in all_peaks['ECG_Q_Peaks']])
+r_peaks = np.array([peak / 100 for peak in info['ECG_R_Peaks']])
+s_peaks = np.array([peak / 100 for peak in all_peaks['ECG_S_Peaks']])
+t_peaks = np.array([peak / 100 for peak in all_peaks['ECG_T_Peaks']])
+p_peaks = np.array([peak / 100 for peak in all_peaks['ECG_P_Peaks']])
 
 t_period = nk.signal_period(t_peaks, sampling_rate=100)
-p_period = nk.signal_period(p_peaks, sampling_rate=100)
-q_period = nk.signal_period(q_peaks, sampling_rate=100)
-
-qt = get_interval(t_peaks, q_peaks)
+t_peaks += t_period
