@@ -108,12 +108,14 @@ df = pd.DataFrame({
 heart_rate = signals["ECG_Rate"]
 heart_cycle = get_heart_cycle(heart_rate)
 
-# Init all peaks
+# Get Q, R, S peaks
 q_peaks = np.array([peak / 100 for peak in all_peaks['ECG_Q_Peaks']])
 r_peaks = np.array([peak / 100 for peak in info['ECG_R_Peaks']])
 s_peaks = np.array([peak / 100 for peak in all_peaks['ECG_S_Peaks']])
-t_peaks = np.array([peak / 100 for peak in all_peaks['ECG_T_Peaks']])
-p_peaks = np.array([peak / 100 for peak in all_peaks['ECG_P_Peaks']])
 
-t_period = nk.signal_period(t_peaks, sampling_rate=100)
-t_peaks += t_period
+# Get T peaks + T period
+t_peaks = np.array([peak / 100 for peak in all_peaks['ECG_T_Peaks']])
+t_peaks += nk.signal_period(t_peaks, sampling_rate=100)
+
+# Get P peaks
+p_peaks = np.array([peak / 100 for peak in all_peaks['ECG_P_Peaks']])
