@@ -63,7 +63,7 @@ def get_heart_cycle(_heart_rate: np.array):
 
 
 def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
-    # Calculate and show QRS TP complex
+    # Calculate and show QRS TP complexes
     _signals, _waves_peak = nk.ecg_delineate(
         _cleaned_signal,
         rpeaks=_r_peaks,
