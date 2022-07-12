@@ -78,7 +78,7 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     }
 
     return np.array(
-        [_qt[i] / (_k_const[_gen] * np.sqrt(heart_cycle)) for i in range(len(_qt))]
+        [i / (_k_const[_gen] * np.sqrt(heart_cycle)) for i in _qt]
     )
 
 
@@ -88,7 +88,7 @@ ecg_raw_data = get_raw_data("ecg_ptbxl.npy")
 # generated data
 ecg_generated = nk.ecg_simulate(duration=10, sampling_rate=100)
 
-# Take signal from data. Taking this lead for tests and examples
+# Take signal from data. Taking this lead(I) for tests and examples
 raw_signal = ecg_raw_data[0][:, 0]
 
 # Get preprocessed data, such as cleaned signal, R-Peaks etc
