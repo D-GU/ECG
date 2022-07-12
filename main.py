@@ -78,7 +78,7 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     }
 
     return np.array(
-        [i / (_k_const[_gen] * np.sqrt(heart_cycle)) for i in _qt]
+        [interval / (_k_const[_gen] * np.sqrt(heart_cycle)) for interval in _qt]
     )
 
 
