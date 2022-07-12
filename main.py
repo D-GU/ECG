@@ -50,20 +50,20 @@ def preprocess(_ecg_signal):
     return _signals, _info
 
 
-def get_intervals(_x_peaks: np.array, name: str, *_y_peaks: np.array):
+def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
     """
     Calculating interval the longevity of the intervals
 
     parameters:
         _x_peaks: The start of the interval
-        name: String, that represents the name of the interval
+        _interval_name: String, that represents the name of the interval
         _y_peaks: Use if needed (calculating any interval except RR)
 
     return:
         an array of change between peaks
 
     """
-    if name.lower() in ["rr", "r-r", "r_r"]:
+    if _interval_name.lower() in ["rr", "r-r", "r_r"]:
         return np.array(
             [np.abs(_x_peaks[i] - _x_peaks[i + 1]) for i in range(len(_x_peaks) - 1)]
         )
