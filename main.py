@@ -12,6 +12,20 @@ def get_raw_data(_path: str):
 
 
 def preprocess(_ecg_signal):
+    """
+    Processing the signal to get first pieces of data to analyze
+
+    parameter:
+        _ecg_signal: Raw ecg signal
+
+    returns:
+        _signals: A data frame containing information about the signal
+            ECG_Clean: Clean ECG signal
+            ECG_Rate: Heart rate that been found on each beat
+            ECG_Raw: Raw ECG signal
+
+        _info: A dictionary containing info about R peaks
+    """
     # Get preprocessed data from the signal
     _ecg_data, _ = nk.ecg_process(_ecg_signal,
                                   sampling_rate=100)
@@ -36,8 +50,20 @@ def preprocess(_ecg_signal):
     return _signals, _info
 
 
-def get_intervals(_x_peaks: np.array, interval: str, *_y_peaks: np.array):
-    if interval.lower() in ["rr", "r-r", "r_r"]:
+def get_intervals(_x_peaks: np.array, name: str, *_y_peaks: np.array):
+    """
+    Calculating interval the longevity of the intervals
+
+    parameters:
+        _x_peaks: The start of the interval
+        name: String, that represents the name of the interval
+        _y_peaks: Use if needed (calculating any interval except RR)
+
+    return:
+        an array of change between peaks
+
+    """
+    if name.lower() in ["rr", "r-r", "r_r"]:
         return np.array(
             [np.abs(_x_peaks[i] - _x_peaks[i + 1]) for i in range(len(_x_peaks) - 1)]
         )
@@ -48,11 +74,31 @@ def get_intervals(_x_peaks: np.array, interval: str, *_y_peaks: np.array):
 
 
 def get_heart_cycle(_heart_rate: np.array):
+    """
+    Calculate heart cycle The cardiac cycle is a series of electrical and mechanical events
+    that occur during the phases of heart relaxation (diastole) and contraction (systole)
+
+    parameter:
+        _heart_rate: Heart rate, that been found within each beat
+
+    return:
+        _heart_cycle = 60 / np.mean(_heart_rate)
+    """
     return 60 / np.mean(_heart_rate)
 
 
 def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
-    # Calculate and show QRS TP complexes
+    """
+    Calculate and show QRS TP complexes
+
+    parameter:
+        _cleaned_signal: Clean ECG signal data
+        _r_peaks: R peaks that been found while preprocessing the data
+
+    returns:
+        _waves_peak: A dict containing main peaks information
+        _signal: A data frame containing main peaks information
+    """
     _signals, _waves_peak = nk.ecg_delineate(
         _cleaned_signal,
         rpeaks=_r_peaks,
@@ -65,10 +111,30 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
     return _signals, _waves_peak
 
 
+def get_pct_change(peaks: np.array):
+    """
+    Percentage change between cur and prev element
+
+    parameters:
+        peaks: an array of peaks
+
+    return:
+        array: array of pct changes
+    """
+    return pd.Series(peaks).pct_change()
+
+
 def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     """
     Calculating the Mechanic systole coefficient using
     Bazzet's formula
+
+    parameters:
+        _qt: An QT interval (array)
+        _heart_cycle: Constant, representing heart cycle
+
+    return:
+        array: array of MS coefficients
     """
     _k_const = {
         "man": 0.37,
@@ -124,16 +190,15 @@ p_peaks = np.array([peak / 100 for peak in all_peaks["ECG_P_Peaks"]])
 t_peaks = np.array([peak / 100 for peak in all_peaks["ECG_T_Peaks"]])
 t_peaks += nk.signal_period(t_peaks, sampling_rate=100)
 
+# Get main intervals lengths (use mean in future analysis)
 qt_interval = get_intervals(q_peaks, "qt", *t_peaks)
-
-mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
-
 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
+rr_interval = get_intervals(r_peaks, 'rr')
 
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
+mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
 
 interval_df = pd.DataFrame({"QT_Interval": qt_interval,
                             "Mechanical systole": mech_sys,
                             "PQ_Interval": pq_interval,
                             "QRS_Complex": qrs_complex})
-print(interval_df)
