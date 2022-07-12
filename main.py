@@ -57,7 +57,7 @@ def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
     parameters:
         _x_peaks: The start of the interval
         _interval_name: String, that represents the name of the interval
-        _y_peaks: Use if needed (any interval except RR)
+        _y_peaks: The end of the interval, use if you need to calculate any interval but RR
 
     return:
         an array of change between peaks
