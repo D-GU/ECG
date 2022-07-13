@@ -113,7 +113,7 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
 
 def get_pct_change(peaks: np.array):
     """
-    Percentage change between cur and prev element
+    Percentage change between cur and prev elements
 
     parameters:
         peaks: an array of peaks
