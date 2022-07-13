@@ -2,19 +2,19 @@ from data import DataECG
 from functions import *
 
 lead_1 = DataECG(0).get_data["I"]
-lead_2 = None
-lead_3 = None
+lead_2 = DataECG(0).get_data["II"]
+lead_3 = DataECG(0).get_data["III"]
 
-a_vr = None
-a_vl = None
-a_vf = None
+a_vr = DataECG(0).get_data["aVR"]
+a_vl = DataECG(0).get_data["aVL"]
+a_vf = DataECG(0).get_data["aVF"]
 
-v1 = None
-v2 = None
-v3 = None
-v4 = None
-v5 = None
-v6 = None
+v1 = DataECG(0).get_data["V1"]
+v2 = DataECG(0).get_data["V2"]
+v3 = DataECG(0).get_data["V3"]
+v4 = DataECG(0).get_data["V4"]
+v5 = DataECG(0).get_data["V5"]
+v6 = DataECG(0).get_data["V6"]
 
 # Get preprocessed data, such as cleaned signal, R-Peaks etc
 signals, info = preprocess(lead_1)
@@ -57,3 +57,11 @@ rr_interval = get_intervals(r_peaks, 'rr')
 # Get QRS complex length and mechanic systole coefficient
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
 mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
+
+interval_df = DataFrame({"QT_Interval": qt_interval,
+                         "PQ_Interval": pq_interval,
+                         "RR_Interval": rr_interval,
+                         "QRS_Complex": qrs_complex})
+
+print(df)
+print(interval_df)
