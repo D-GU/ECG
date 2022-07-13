@@ -1,4 +1,4 @@
-import pandas as pd
+from pandas import DataFrame
 from numpy import load
 
 
@@ -30,7 +30,7 @@ class DataECG:
         self.v5 = ecg_raw_data[pack][:, 10]
         self.v6 = ecg_raw_data[pack][:, 11]
 
-        self.df = pd.DataFrame(
+        self.df = DataFrame(
             {
                 "I": self.lead_1,
                 "II": self.lead_2,

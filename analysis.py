@@ -1,4 +1,4 @@
-from data import DataECG
+from raw_data import DataECG
 from functions import *
 
 lead_1 = DataECG(0).get_data["I"]
@@ -53,15 +53,8 @@ t_peaks += signal_period(t_peaks, sampling_rate=100)
 qt_interval = get_intervals(q_peaks, "qt", *t_peaks)
 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
 rr_interval = get_intervals(r_peaks, 'rr')
+rr_interval.resize(len(r_peaks))
 
 # Get QRS complex length and mechanic systole coefficient
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
 mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
-
-interval_df = DataFrame({"QT_Interval": qt_interval,
-                         "PQ_Interval": pq_interval,
-                         "RR_Interval": rr_interval,
-                         "QRS_Complex": qrs_complex})
-
-print(df)
-print(interval_df)
