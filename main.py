@@ -1,7 +1,8 @@
 import numpy as np
-import pandas as pd
 import neurokit2 as nk
 import matplotlib.pyplot as plt
+
+from pandas import Series, DataFrame
 
 CHANEL = 12
 
@@ -41,9 +42,9 @@ def preprocess(_ecg_signal):
     _rate = nk.ecg_rate(_r_peaks, sampling_rate=100,
                         desired_length=len(_ecg_clean_signal))
 
-    _signals = pd.DataFrame({"ECG_Raw": _ecg_signal,
-                             "ECG_Clean": _ecg_clean_signal,
-                             "ECG_Rate": _rate})
+    _signals = DataFrame({"ECG_Raw": _ecg_signal,
+                          "ECG_Clean": _ecg_clean_signal,
+                          "ECG_Rate": _rate})
 
     _info = _r_peaks
 
@@ -121,7 +122,7 @@ def get_pct_change(peaks: np.array):
     return:
         array: array of pct changes
     """
-    return pd.Series(peaks).pct_change()
+    return Series(peaks).pct_change()
 
 
 def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
@@ -169,7 +170,7 @@ r_peaks = info["ECG_R_Peaks"]
 # Get Q-Peaks, S-Peaks, T-Peaks
 _, all_peaks = get_qst_peaks(raw_signal, r_peaks)
 
-df = pd.DataFrame({
+df = DataFrame({
     "ECG_Q_Peaks": all_peaks["ECG_Q_Peaks"],
     "ECG_T_Peaks": all_peaks["ECG_T_Peaks"],
     "ECG_S_Peaks": all_peaks["ECG_S_Peaks"],
@@ -199,7 +200,3 @@ rr_interval = get_intervals(r_peaks, 'rr')
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
 mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
 
-interval_df = pd.DataFrame({"QT_Interval": qt_interval,
-                            "Mechanical systole": mech_sys,
-                            "PQ_Interval": pq_interval,
-                            "QRS_Complex": qrs_complex})
