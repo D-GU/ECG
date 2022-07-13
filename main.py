@@ -199,4 +199,3 @@ rr_interval = get_intervals(r_peaks, 'rr')
 # Get QRS complex length and mechanic systole coefficient
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
 mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
-
