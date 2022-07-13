@@ -75,7 +75,7 @@ def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
 
 def get_heart_cycle(_heart_rate: np.array):
     """
-    Calculate heart cycle The cardiac cycle is a series of electrical and mechanical events
+    Calculate heart cycle. The cardiac cycle is a series of electrical and mechanical events
     that occur during the phases of heart relaxation (diastole) and contraction (systole)
 
     parameter:
