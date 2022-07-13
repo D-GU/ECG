@@ -52,7 +52,7 @@ def preprocess(_ecg_signal):
 
 def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
     """
-    Calculating interval the longevity of the intervals
+    Calculating interval longevity between peaks
 
     parameters:
         _x_peaks: The start of the interval
