@@ -1,5 +1,9 @@
-from raw_data import DataECG
+import matplotlib.pyplot as plt
+import scipy.fftpack
+
 from functions import *
+from raw_data import DataECG
+from biosppy.signals.tools import analytic_signal
 
 lead_1 = DataECG(0).get_data["I"]
 lead_2 = DataECG(0).get_data["II"]
@@ -58,3 +62,44 @@ rr_interval.resize(len(r_peaks))
 # Get QRS complex length and mechanic systole coefficient
 qrs_complex = get_intervals(q_peaks, 'qrs', *s_peaks)
 mech_sys = get_mech_systole(qt_interval, heart_cycle, "women")
+
+qt_amp = analytic_signal(qt_interval)['amplitude']
+
+# Angle of QT
+angle_qt = [np.arctan(i / j) for i, j in zip(qt_interval, qt_amp)]
+
+delta_r_qt = np.array(
+    ['+' if qt_interval[i] > qt_interval[i + 1] else '-' for i in range(len(qt_interval) - 1)]
+)
+
+delta_t_qt = np.array(
+    ['+' if qt_amp[i] > qt_interval[i + 1] else '-' for i in range(len(qt_interval) - 1)]
+)
+
+delta_a_qt = np.array(
+    ['+' if angle_qt[i] > angle_qt[i + 1] else '-' for i in range(len(angle_qt) - 1)]
+)
+
+
+def n_gram_sig(_interval: np.array, _amplitude: np.array, _angle: np.array):
+    _gram_dict = {
+        "+++": "A",
+        "--+": "B",
+        "+-+": "C",
+        "---": "D",
+        "++-": "F",
+        "-+-": "E"
+    }
+
+    _n_string = ""
+
+    for _inter, _ampl, _angl in zip(_interval, _amplitude, _angle):
+        _n_string += _gram_dict[_inter + _ampl + _angl]
+
+    return _n_string
+
+
+p = n_gram_sig(delta_r_qt, delta_t_qt, delta_a_qt)
+
+print(p)
+# plt.show()
