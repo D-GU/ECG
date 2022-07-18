@@ -32,18 +32,18 @@ class DataECG:
 
         self.df = DataFrame(
             {
-                "I": self.lead_1,
-                "II": self.lead_2,
-                "III": self.lead_3,
-                "aVR": self.a_vr,
-                "aVL": self.a_vl,
-                "aVF": self.a_vf,
-                "V1": self.v1,
-                "V2": self.v2,
-                "V3": self.v3,
-                "V4": self.v4,
-                "V5": self.v5,
-                "V6": self.v6
+                0: self.lead_1,
+                1: self.lead_2,
+                2: self.lead_3,
+                3: self.a_vr,
+                4: self.a_vl,
+                5: self.a_vf,
+                6: self.v1,
+                7: self.v2,
+                8: self.v3,
+                9: self.v4,
+                10: self.v5,
+                11: self.v6
             }
         )
 

@@ -59,9 +59,9 @@ def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
 
     """
     if _interval_name.lower() in ["rr", "r-r", "r_r"]:
-        return np.array(
-            [np.abs(_x_peaks[i] - _x_peaks[i + 1]) for i in range(len(_x_peaks) - 1)]
-        )
+        _rr = [np.abs(_x_peaks[i] - _x_peaks[i + 1]) for i in range(len(_x_peaks) - 1)]
+        _rr.append(0)
+        return np.array(_rr)
     else:
         return np.array(
             [np.abs(_x_peaks[i] - _y_peaks[i]) for i in range(len(_x_peaks))]
@@ -99,7 +99,7 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
         rpeaks=_r_peaks,
         sampling_rate=100,
         method="dwt",
-        show=True,
+        show=False,
         show_type="peaks"
     )
 
@@ -141,3 +141,33 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     return np.array(
         [interval / (_k_const[_gen] * np.sqrt(_heart_cycle)) for interval in _qt]
     )
+
+
+def n_gram_sig(_interval: np.array, _amplitude: np.array, _angle: np.array):
+    """
+        A function that returns the string of letter
+        presenting condition of signs in (intervals, amplitudes, angles)
+
+        parameters:
+            _interval: np.array of intervals
+            _amplitude: np.array of amplitudes
+            _angle: np.array of angles
+
+        return:
+            string of signs conditions
+    """
+    _gram_dict = {
+        "+++": "A",
+        "--+": "B",
+        "+-+": "C",
+        "---": "D",
+        "++-": "F",
+        "-+-": "E"
+    }
+
+    _n_string = ""
+
+    for _inter, _ampl, _angl in zip(_interval, _amplitude, _angle):
+        _n_string += _gram_dict[_inter + _ampl + _angl]
+
+    return _n_string
