@@ -87,7 +87,7 @@ def get_params(_samples_st, _samples_end, _leads, _q):
                     parameters[samples][parameter].append(0)
 
         print(samples)
-        _q.put_nowait(parameters[samples])
+        _q.put(parameters[samples])
 
     return
 
