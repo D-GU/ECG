@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-from neurokit2 import ecg_process, ecg_peaks, ecg_delineate, ecg_rate, signal_period
+from neurokit2 import ecg_process, ecg_peaks, ecg_delineate, ecg_rate, ecg_clean, signal_period
 from pandas import DataFrame, Series
 
 
@@ -21,24 +21,20 @@ def preprocess(_ecg_signal):
         _info: A dictionary containing info about R peaks
     """
     # Get preprocessed data from the signal
-    _ecg_data, _ = ecg_process(_ecg_signal,
-                               sampling_rate=100)
 
     # Get cleaned signal from the data frame, so we can find peaks
-    _ecg_clean_signal = np.array(_ecg_data["ECG_Clean"])
+
+    _ecg_clean_signal = ecg_clean(_ecg_signal, sampling_rate=100)
 
     # Get peaks from the cleaned signal
     _instant_peaks, _r_peaks = ecg_peaks(_ecg_clean_signal,
                                          sampling_rate=100)
 
     # Getting the rate based on the signal peaks
-    _rate = ecg_rate(_r_peaks,
-                     sampling_rate=100,
-                     desired_length=len(_ecg_clean_signal))
 
     _signals = DataFrame({"ECG_Raw": _ecg_signal,
-                          "ECG_Clean": _ecg_clean_signal,
-                          "ECG_Rate": _rate})
+                          "ECG_Clean": _ecg_clean_signal
+                          })
 
     _info = _r_peaks
 
@@ -94,6 +90,7 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
         _waves_peak: A dict containing main peaks information
         _signal: A data frame containing main peaks information
     """
+
     _signals, _waves_peak = ecg_delineate(
         _cleaned_signal,
         rpeaks=_r_peaks,
@@ -171,3 +168,7 @@ def n_gram_sig(_interval: np.array, _amplitude: np.array, _angle: np.array):
         _n_string += _gram_dict[_inter + _ampl + _angl]
 
     return _n_string
+
+
+def get_period(_signal: np.array):
+    return np.mean(signal_period(_signal))
