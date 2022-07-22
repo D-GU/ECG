@@ -92,9 +92,6 @@ def get_params(_samples_st, _samples_end, _leads, _q):
     return
 
 
-x = np.array([])
-
-
 def task(_tar):
     q = multiprocessing.Queue()
     task1 = multiprocessing.Process(target=_tar, args=(0, 10, 12, q), name="task1")
@@ -108,11 +105,9 @@ def task(_tar):
     # task4.name = "task4"
 
     task1.start()
-    np.append(x, q.get())
-    task1.join()
-
     task2.start()
 
+    task1.join()
     task2.join()
 
     # task3.start()
@@ -127,4 +122,5 @@ def task(_tar):
     # np.save("parameters.npy", pars)
 
 
-task(get_params)
+if __name__ == "__main__":
+    task(get_params)
