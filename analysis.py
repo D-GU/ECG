@@ -7,45 +7,33 @@ from raw_data import get_raw_data
 
 raw_data = get_raw_data("ecg_ptbxl.npy")
 
+parameters = np.array(
+    [
+        {"Q": [],
+         "R": [],
+         "S": [],
+         "T": [],
+         "P": [],
+         "Q_A": [],
+         "R_A": [],
+         "P_A": [],
+         "S_A": [],
+         "T_A": [],
+         "QT": [],
+         "PQ": [],
+         "RR": []} for i in range(21430)
+    ]
+)
+
 
 def get_params(_samples_st, _samples_end, _leads, _q):
-    parameters = np.array(
-        [
-            {"Q": [],
-             "R": [],
-             "S": [],
-             "T": [],
-             "P": [],
-             "Q_A": [],
-             "R_A": [],
-             "P_A": [],
-             "S_A": [],
-             "T_A": [],
-             "QT": [],
-             "PQ": [],
-             "RR": []} for i in range(21430)
-        ]
-    )
     for samples in range(_samples_st, _samples_end):
         for leads in range(_leads):
             lead = raw_data[samples][:, leads]
 
             if np.max(lead) == 0:
-                parameters[samples]["Q"].append(0)
-                parameters[samples]["R"].append(0)
-                parameters[samples]["S"].append(0)
-                parameters[samples]["T"].append(0)
-                parameters[samples]["P"].append(0)
-                parameters[samples]["Q_A"].append(0)
-                parameters[samples]["R_A"].append(0)
-                parameters[samples]["S_A"].append(0)
-                parameters[samples]["T_A"].append(0)
-                parameters[samples]["P_A"].append(0)
-                parameters[samples]["QT"].append(0)
-                parameters[samples]["PQ"].append(0)
-                parameters[samples]["RR"].append(0)
-
-                continue
+                for parameter in parameters[samples].keys():
+                    parameters[samples][parameter].append(0)
 
             # Get preprocessed data, such as cleaned signal, R-Peaks etc
             signals, info = preprocess(lead)
@@ -95,23 +83,16 @@ def get_params(_samples_st, _samples_end, _leads, _q):
                 parameters[samples]["RR"].append(np.mean(rr_interval))
 
             else:
-                parameters[samples]["Q"].append(0)
-                parameters[samples]["R"].append(0)
-                parameters[samples]["S"].append(0)
-                parameters[samples]["T"].append(0)
-                parameters[samples]["P"].append(0)
-                parameters[samples]["Q_A"].append(0)
-                parameters[samples]["R_A"].append(0)
-                parameters[samples]["S_A"].append(0)
-                parameters[samples]["T_A"].append(0)
-                parameters[samples]["P_A"].append(0)
-                parameters[samples]["QT"].append(0)
-                parameters[samples]["PQ"].append(0)
-                parameters[samples]["RR"].append(0)
+                for parameter in parameters[samples].keys():
+                    parameters[samples][parameter].append(0)
+
         print(samples)
-        _q.put(parameters[samples])
+        _q.put_nowait(parameters[samples])
 
     return
+
+
+x = np.array([])
 
 
 def task(_tar):
@@ -127,12 +108,16 @@ def task(_tar):
     # task4.name = "task4"
 
     task1.start()
+    np.append(x, q.get())
+    task1.join()
+
     task2.start()
+
+    task2.join()
+
     # task3.start()
     # task4.start()
 
-    task1.join()
-    task2.join()
     # task3.join()
     # task4.join()
 
