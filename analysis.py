@@ -116,10 +116,11 @@ def task(_tar):
     # task3.join()
     # task4.join()
 
-    while q.empty() is False:
-        print(q.get())
+    for samples in range(21430):
+        while q.empty() is False:
+            parameters[samples] = q.get()[samples]
 
-    # np.save("parameters.npy", pars)
+    np.save("parameters.npy")
 
 
 if __name__ == "__main__":
