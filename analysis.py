@@ -5,9 +5,10 @@ import numpy as np
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("ecg_ptbxl.npy")
+raw_data = get_raw_data("train.npy")
 
-QUAN_SAMPLES = 21430
+print(raw_data.shape)
+QUAN_SAMPLES = raw_data.shape[0]
 
 parameters = np.array(
     [
@@ -89,35 +90,41 @@ def get_params(_st, _end, _leads, _queue):
                 for parameter in parameters[sample].keys():
                     parameters[sample][parameter].append(0)
         print(sample)
-        _queue.put(parameters[sample])
-    _queue.cancel_join_thread()
+        _queue.put((sample, parameters[sample]))
+    return parameters
 
 
 def task(_tar):
-    q = multiprocessing.JoinableQueue()
+    manager = multiprocessing.Manager()
+    q = manager.Queue()
 
-    task1 = multiprocessing.Process(target=_tar, args=(0, 4286, 12, q), name="task1")
-    task2 = multiprocessing.Process(target=_tar, args=(4286, 8572, 12, q), name="task2")
-    task3 = multiprocessing.Process(target=_tar, args=(8572, 12858, 12, q), name="Task3")
-    task4 = multiprocessing.Process(target=_tar, args=(12858, 17144, 12, q), name="Task4")
-    task5 = multiprocessing.Process(target=_tar, args=(17144, QUAN_SAMPLES, 12, q), name="Task5")
+    task1 = multiprocessing.Process(target=_tar, args=(0, 3422, 12, q), name="task1")
+    task2 = multiprocessing.Process(target=_tar, args=(3422, 6844, 12, q), name="task2")
+    task3 = multiprocessing.Process(target=_tar, args=(6844, 10266, 12, q), name="Task3")
+    task4 = multiprocessing.Process(target=_tar, args=(10266, 13688, 12, q), name="Task4")
+    task5 = multiprocessing.Process(target=_tar, args=(13688, 17110, 12, q), name="Task5")
+    task6 = multiprocessing.Process(target=_tar, args=(17110, 17111, 12, q), name="Task6")
 
     task1.start()
     task2.start()
     task3.start()
     task4.start()
     task5.start()
+    task6.start()
 
     task1.join()
     task2.join()
     task3.join()
     task4.join()
     task5.join()
+    task6.join()
 
     while q.empty() is False:
-        print(f"Result №{q.get()[0]}")
+        key, sample = q.get()
+        parameters[key] = sample
 
-    # np.save("parameters.npy", parameters)
+    # np.save("train_par.npy", parameters)
+
 
 if __name__ == "__main__":
     task(get_params)
