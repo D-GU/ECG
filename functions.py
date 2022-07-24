@@ -1,7 +1,6 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
-from neurokit2 import ecg_process, ecg_peaks, ecg_delineate, ecg_rate, ecg_clean, signal_period
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_period
 from pandas import DataFrame, Series
 
 

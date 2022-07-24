@@ -1,3 +1,3 @@
 import numpy as np
-import pandas as pd
 
+parameters = np.load("parameters.npy", allow_pickle=True)
