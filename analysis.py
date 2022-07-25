@@ -56,6 +56,7 @@ def get_params(_st, _end, _leads, _queue):
                 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
                 rr_interval = get_intervals(r_peaks, 'rr')
 
+                # Assign values to the positions
                 parameters[sample][leads][0] = get_period(q_peaks)
                 parameters[sample][leads][1] = get_period(r_peaks)
                 parameters[sample][leads][2] = get_period(s_peaks)
@@ -74,13 +75,17 @@ def get_params(_st, _end, _leads, _queue):
                 parameters[sample][leads][::] = 0
 
         print(sample)
+
+        # Put sample parameters in queue
         _queue.put((sample, parameters[sample]))
 
 
 def task(_tar):
+    # Init manager and queue
     manager = multiprocessing.Manager()
     q = manager.Queue()
 
+    # Init processes
     task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
     task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
     task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
@@ -89,6 +94,7 @@ def task(_tar):
     task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
     task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
 
+    # Start processes
     task1.start()
     task2.start()
     task3.start()
@@ -97,6 +103,7 @@ def task(_tar):
     task6.start()
     task7.start()
 
+    # Join processes
     task1.join()
     task2.join()
     task3.join()
@@ -105,6 +112,7 @@ def task(_tar):
     task6.join()
     task7.join()
 
+    # Taking objects off of the queue
     while q.empty() is False:
         key, sample = q.get()
         parameters[key] = sample
