@@ -1,32 +1,17 @@
 import multiprocessing
 
-import numpy as np
-
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("train.npy")
+raw_data = get_raw_data("val.npy")
 
-print(raw_data.shape)
 QUAN_SAMPLES = raw_data.shape[0]
 
+print(QUAN_SAMPLES)
 parameters = np.array(
-    [
-        {"Q": [],
-         "R": [],
-         "S": [],
-         "T": [],
-         "P": [],
-         "Q_A": [],
-         "R_A": [],
-         "P_A": [],
-         "S_A": [],
-         "T_A": [],
-         "QT": [],
-         "PQ": [],
-         "RR": []} for i in range(QUAN_SAMPLES)
-    ]
-)
+    [np.array(
+        [np.array(
+            [np.float64(0) for pars in range(13)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
 
 
 def get_params(_st, _end, _leads, _queue):
@@ -35,8 +20,7 @@ def get_params(_st, _end, _leads, _queue):
             lead = raw_data[sample][:, leads]
 
             if np.max(lead) == 0:
-                for parameter in parameters[sample].keys():
-                    parameters[sample][parameter].append(0)
+                parameters[sample][leads][::] = 0
                 continue
 
             # Get preprocessed data, such as cleaned signal, R-Peaks etc
@@ -72,38 +56,38 @@ def get_params(_st, _end, _leads, _queue):
                 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
                 rr_interval = get_intervals(r_peaks, 'rr')
 
-                parameters[sample]["Q"].append(get_period(q_peaks))
-                parameters[sample]["R"].append(get_period(r_peaks))
-                parameters[sample]["S"].append(get_period(s_peaks))
-                parameters[sample]["T"].append(get_period(t_peaks))
-                parameters[sample]["P"].append(get_period(p_peaks))
-                parameters[sample]["Q_A"].append(np.mean(q_amp))
-                parameters[sample]["R_A"].append(np.mean(r_amp))
-                parameters[sample]["S_A"].append(np.mean(s_amp))
-                parameters[sample]["T_A"].append(np.mean(t_amp))
-                parameters[sample]["P_A"].append(np.mean(p_amp))
-                parameters[sample]["QT"].append(np.mean(qt_interval))
-                parameters[sample]["PQ"].append(np.mean(pq_interval))
-                parameters[sample]["RR"].append(np.mean(rr_interval))
+                parameters[sample][leads][0] = get_period(q_peaks)
+                parameters[sample][leads][1] = get_period(r_peaks)
+                parameters[sample][leads][2] = get_period(s_peaks)
+                parameters[sample][leads][3] = get_period(t_peaks)
+                parameters[sample][leads][4] = get_period(p_peaks)
+                parameters[sample][leads][5] = np.mean(q_amp)
+                parameters[sample][leads][6] = np.mean(r_amp)
+                parameters[sample][leads][7] = np.mean(s_amp)
+                parameters[sample][leads][8] = np.mean(t_amp)
+                parameters[sample][leads][9] = np.mean(p_amp)
+                parameters[sample][leads][10] = np.mean(qt_interval)
+                parameters[sample][leads][11] = np.mean(pq_interval)
+                parameters[sample][leads][12] = np.mean(rr_interval)
 
             else:
-                for parameter in parameters[sample].keys():
-                    parameters[sample][parameter].append(0)
+                parameters[sample][leads][::] = 0
+
         print(sample)
         _queue.put((sample, parameters[sample]))
-    return parameters
 
 
 def task(_tar):
     manager = multiprocessing.Manager()
     q = manager.Queue()
 
-    task1 = multiprocessing.Process(target=_tar, args=(0, 3422, 12, q), name="task1")
-    task2 = multiprocessing.Process(target=_tar, args=(3422, 6844, 12, q), name="task2")
-    task3 = multiprocessing.Process(target=_tar, args=(6844, 10266, 12, q), name="Task3")
-    task4 = multiprocessing.Process(target=_tar, args=(10266, 13688, 12, q), name="Task4")
-    task5 = multiprocessing.Process(target=_tar, args=(13688, 17110, 12, q), name="Task5")
-    task6 = multiprocessing.Process(target=_tar, args=(17110, 17111, 12, q), name="Task6")
+    task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
+    task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
+    task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
+    task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
+    task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
+    task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
+    task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
 
     task1.start()
     task2.start()
@@ -111,6 +95,7 @@ def task(_tar):
     task4.start()
     task5.start()
     task6.start()
+    task7.start()
 
     task1.join()
     task2.join()
@@ -118,12 +103,13 @@ def task(_tar):
     task4.join()
     task5.join()
     task6.join()
+    task7.join()
 
     while q.empty() is False:
         key, sample = q.get()
         parameters[key] = sample
 
-    # np.save("train_par.npy", parameters)
+    np.save("val_par.npy", parameters)
 
 
 if __name__ == "__main__":
