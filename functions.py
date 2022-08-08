@@ -170,4 +170,20 @@ def n_gram_sig(_interval: np.array, _amplitude: np.array, _angle: np.array):
 
 
 def get_period(_signal: np.array):
-    return np.mean(signal_period(_signal))
+    return signal_period(_signal)
+
+
+def get_dispersion(_peaks: np.array):
+    _length = np.size(_peaks) - 1
+    _std_deviation = 0
+    mean = np.mean(_peaks)
+
+    for i in range(_length + 1):
+        _std_deviation += np.power(_peaks[i] - mean, 2)
+
+    return _std_deviation / _length
+
+
+def get_std_deviation(_peaks: np.array):
+    dispersion = get_dispersion(_peaks)
+    return np.sqrt(dispersion)
