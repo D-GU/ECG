@@ -77,7 +77,7 @@ def get_heart_cycle(_heart_rate: np.array):
     return 60 / np.mean(_heart_rate)
 
 
-def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
+def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array, _sampling_rate: int):
     """
     Calculate and show QRS TP complexes
 
@@ -93,7 +93,7 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array):
     _signals, _waves_peak = ecg_delineate(
         _cleaned_signal,
         rpeaks=_r_peaks,
-        sampling_rate=100,
+        sampling_rate=_sampling_rate,
         method="dwt",
         show=False,
         show_type="peaks"

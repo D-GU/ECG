@@ -3,11 +3,11 @@ import multiprocessing
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("val.npy")
+raw_data = get_raw_data("ecg_ptbxl.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]
+SAMPLING_RATE = 100
 
-print(QUAN_SAMPLES)
 parameters = np.array(
     [np.array(
         [np.array(
@@ -34,7 +34,7 @@ def get_params(_st, _end, _leads, _queue):
 
             if r_peaks.size > 5:
                 # Find Q-Peaks, S-Peaks, T-Peaks
-                _, peaks = get_qst_peaks(lead, r_peaks)
+                _, peaks = get_qst_peaks(lead, r_peaks, SAMPLING_RATE)
 
                 # Get Q, S, P, T peaks
                 q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_Q_Peaks"]])
