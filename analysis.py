@@ -11,7 +11,7 @@ print(QUAN_SAMPLES)
 parameters = np.array(
     [np.array(
         [np.array(
-            [np.float64(0) for pars in range(13)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
+            [np.float64(0) for pars in range(14)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
 
 
 def get_params(_st, _end, _leads, _queue):
@@ -51,10 +51,11 @@ def get_params(_st, _end, _leads, _queue):
                 t_amp = np.array(
                     [lead[peak] if isinstance(peak, np.int64) and peak != 0 else 0 for peak in t_peaks])
 
-                # Get main intervals lengths (use mean in future analysis)
+                # Get main intervals lengths (use median in future analysis)
                 qt_interval = get_intervals(q_peaks, "qt", *t_peaks)
                 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
                 rr_interval = get_intervals(r_peaks, 'rr')
+                qrs_interval = get_intervals(q_peaks, s_peaks)
 
                 # Assign values to the positions
                 parameters[sample][leads][0] = get_period(q_peaks)
@@ -62,14 +63,15 @@ def get_params(_st, _end, _leads, _queue):
                 parameters[sample][leads][2] = get_period(s_peaks)
                 parameters[sample][leads][3] = get_period(t_peaks)
                 parameters[sample][leads][4] = get_period(p_peaks)
-                parameters[sample][leads][5] = np.mean(q_amp)
-                parameters[sample][leads][6] = np.mean(r_amp)
-                parameters[sample][leads][7] = np.mean(s_amp)
-                parameters[sample][leads][8] = np.mean(t_amp)
-                parameters[sample][leads][9] = np.mean(p_amp)
-                parameters[sample][leads][10] = np.mean(qt_interval)
-                parameters[sample][leads][11] = np.mean(pq_interval)
-                parameters[sample][leads][12] = np.mean(rr_interval)
+                parameters[sample][leads][5] = np.median(q_amp)
+                parameters[sample][leads][6] = np.median(r_amp)
+                parameters[sample][leads][7] = np.median(s_amp)
+                parameters[sample][leads][8] = np.median(t_amp)
+                parameters[sample][leads][9] = np.median(p_amp)
+                parameters[sample][leads][10] = np.median(qt_interval)
+                parameters[sample][leads][11] = np.median(pq_interval)
+                parameters[sample][leads][12] = np.median(rr_interval)
+                parameters[sample][leads][13] = np.median(qrs_interval)
 
             else:
                 parameters[sample][leads][::] = 0
