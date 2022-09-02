@@ -1,7 +1,8 @@
 import numpy as np
 
-from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_period
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean
 from pandas import DataFrame, Series
+from scipy.signal import peak_prominences, peak_widths
 
 
 def preprocess(_ecg_signal):
@@ -96,10 +97,44 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array, _sampling_rate:
         sampling_rate=_sampling_rate,
         method="dwt",
         show=False,
-        show_type="peaks"
+        show_type="all"
     )
 
     return _signals, _waves_peak
+
+
+def get_width(_signal: np.array, _peaks):
+    _proms = peak_prominences(_signal, _peaks)
+    return peak_widths(_signal, _peaks, prominence_data=_proms)
+
+
+def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
+    _q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_Q_Peaks"]])
+    _s_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_S_Peaks"]])
+    _p_peaks = np.array([peak if isinstance(peak, int) else 0 for peak in _peaks["ECG_P_Peaks"]])
+    _t_peaks = np.array([peak if isinstance(peak, int) else 0 for peak in _peaks["ECG_T_Peaks"]])
+
+    # Get Onsets and Offsets of certain peaks
+    _t_ons = _peaks["ECG_T_Onsets"]
+    _t_offs = _peaks["ECG_T_Offsets"]
+
+    _p_ons = _peaks["ECG_P_Onsets"]
+    _p_offs = _peaks["ECG_P_Offsets"]
+
+    _r_ons = _peaks["ECG_R_Onsets"]
+    _r_offs = _peaks["ECG_R_Offsets"]
+
+    # Calculate Q boundaries
+    _r_to_q = [i - j for i, j in zip(_r_peaks, _q_peaks)]
+    _q_start = [i - j for i, j in zip(_q_peaks, _r_to_q)]
+    _q_end = [i + j for i, j in zip(_q_peaks, _r_to_q)]
+
+    # Calculate peaks durations
+    _q_dur = np.subtract(_q_end, _q_start)
+    _r_dur = np.subtract(_r_offs, _r_ons)
+    _t_dur = np.subtract(_t_offs, _t_ons)
+    _p_dur = np.subtract(_p_offs, _p_ons)
+    _s_dur = get_width(_signal, _s_peaks)
 
 
 def get_pct_change(peaks: np.array):

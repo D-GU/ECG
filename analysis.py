@@ -1,5 +1,5 @@
 import multiprocessing
-
+import matplotlib.pyplot as plt
 from functions import *
 from raw_data import get_raw_data
 
@@ -11,7 +11,7 @@ SAMPLING_RATE = 100
 parameters = np.array(
     [np.array(
         [np.array(
-            [np.float64(0) for pars in range(14)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
+            [np.float64(0) for pars in range(15)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
 
 
 def get_params(_st, _end, _leads, _queue):
@@ -35,7 +35,7 @@ def get_params(_st, _end, _leads, _queue):
             if r_peaks.size > 5:
                 # Find Q-Peaks, S-Peaks, T-Peaks
                 _, peaks = get_qst_peaks(lead, r_peaks, SAMPLING_RATE)
-
+                plt.show()
                 # Get Q, S, P, T peaks
                 q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_Q_Peaks"]])
                 s_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_S_Peaks"]])
@@ -55,7 +55,8 @@ def get_params(_st, _end, _leads, _queue):
                 qt_interval = get_intervals(q_peaks, "qt", *t_peaks)
                 pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
                 rr_interval = get_intervals(r_peaks, 'rr')
-                qrs_interval = get_intervals(q_peaks, s_peaks)
+                pr_interval = get_intervals(p_peaks, "pr", *r_peaks)
+                qrs_complex = get_intervals(q_peaks, "qrs", *s_peaks)
 
                 # Assign values to the positions
                 parameters[sample][leads][0] = get_period(q_peaks)
@@ -68,10 +69,11 @@ def get_params(_st, _end, _leads, _queue):
                 parameters[sample][leads][7] = np.median(s_amp)
                 parameters[sample][leads][8] = np.median(t_amp)
                 parameters[sample][leads][9] = np.median(p_amp)
-                parameters[sample][leads][10] = np.median(qt_interval)
-                parameters[sample][leads][11] = np.median(pq_interval)
-                parameters[sample][leads][12] = np.median(rr_interval)
-                parameters[sample][leads][13] = np.median(qrs_interval)
+                parameters[sample][leads][10] = np.median(qt_interval / SAMPLING_RATE)
+                parameters[sample][leads][11] = np.median(pq_interval / SAMPLING_RATE)
+                parameters[sample][leads][12] = np.median(rr_interval / SAMPLING_RATE)
+                parameters[sample][leads][13] = np.median(pr_interval / SAMPLING_RATE)
+                parameters[sample][leads][14] = np.median(qrs_complex / SAMPLING_RATE)
 
             else:
                 parameters[sample][leads][::] = 0
