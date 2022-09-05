@@ -1,9 +1,11 @@
 import multiprocessing
 import matplotlib.pyplot as plt
+import numpy as np
+
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("ecg_ptbxl.npy")
+raw_data = get_raw_data("train.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]
 SAMPLING_RATE = 100
@@ -34,47 +36,55 @@ def get_params(_st, _end, _leads, _queue):
 
             if r_peaks.size > 5:
                 # Find Q-Peaks, S-Peaks, T-Peaks
-                _, peaks = get_qst_peaks(lead, r_peaks, SAMPLING_RATE)
-                plt.show()
-                # Get Q, S, P, T peaks
-                q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_Q_Peaks"]])
-                s_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_S_Peaks"]])
-                p_peaks = np.array([peak if isinstance(peak, int) else 0 for peak in peaks["ECG_P_Peaks"]])
-                t_peaks = np.array([peak if isinstance(peak, int) else 0 for peak in peaks["ECG_T_Peaks"]])
+                _, peaks = get_qst_peaks(clean_signal, r_peaks, SAMPLING_RATE)
+
+                # Get Q, S, P, T peaks durations
+                peaks_dur = get_durations(_signal=clean_signal, _peaks=peaks, _r_peaks=r_peaks)
+
+                q_dur = peaks_dur["Q_Durations"]
+                r_dur = peaks_dur["R_Durations"]
+                s_dur = peaks_dur["S_Durations"]
+                t_dur = peaks_dur["T_Durations"]
+                p_dur = peaks_dur["P_Durations"]
 
                 # Get Q, R, S, P, T amplitudes
-                q_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in q_peaks])
-                r_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in r_peaks])
-                s_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in s_peaks])
+                q_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_Q_Peaks"]])
+                r_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in info["ECG_R_Peaks"]])
+                s_amp = np.array([lead[peak] if isinstance(peak, np.int64) else 0 for peak in peaks["ECG_S_Peaks"]])
                 p_amp = np.array(
-                    [lead[peak] if isinstance(peak, np.int64) and peak != 0 else 0 for peak in p_peaks])
+                    [lead[peak] if isinstance(peak, int) and peak != 0 else 0 for peak in peaks["ECG_P_Peaks"]])
                 t_amp = np.array(
-                    [lead[peak] if isinstance(peak, np.int64) and peak != 0 else 0 for peak in t_peaks])
+                    [lead[peak] if isinstance(peak, int) and peak != 0 else 0 for peak in peaks["ECG_T_Peaks"]])
 
                 # Get main intervals lengths (use median in future analysis)
-                qt_interval = get_intervals(q_peaks, "qt", *t_peaks)
-                pq_interval = get_intervals(p_peaks, "pq", *q_peaks)
-                rr_interval = get_intervals(r_peaks, 'rr')
-                pr_interval = get_intervals(p_peaks, "pr", *r_peaks)
-                qrs_complex = get_intervals(q_peaks, "qrs", *s_peaks)
+
+                qt_interval = get_intervals(peaks_dur["Q_Onsets"], "qt", *peaks["ECG_T_Onsets"])
+                pq_interval = get_intervals(peaks["ECG_P_Onsets"], "pq", *peaks_dur["Q_Onsets"])
+                rr_interval = get_intervals(peaks["ECG_R_Onsets"], 'rr')
+                pr_interval = get_intervals(peaks["ECG_P_Onsets"], "pr", *peaks["ECG_R_Onsets"])
+                qrs_complex = get_intervals(peaks_dur["Q_Onsets"], "qrs", *peaks["ECG_S_Peaks"])
 
                 # Assign values to the positions
-                parameters[sample][leads][0] = get_period(q_peaks)
-                parameters[sample][leads][1] = get_period(r_peaks)
-                parameters[sample][leads][2] = get_period(s_peaks)
-                parameters[sample][leads][3] = get_period(t_peaks)
-                parameters[sample][leads][4] = get_period(p_peaks)
-                parameters[sample][leads][5] = np.median(q_amp)
-                parameters[sample][leads][6] = np.median(r_amp)
-                parameters[sample][leads][7] = np.median(s_amp)
-                parameters[sample][leads][8] = np.median(t_amp)
-                parameters[sample][leads][9] = np.median(p_amp)
-                parameters[sample][leads][10] = np.median(qt_interval / SAMPLING_RATE)
-                parameters[sample][leads][11] = np.median(pq_interval / SAMPLING_RATE)
-                parameters[sample][leads][12] = np.median(rr_interval / SAMPLING_RATE)
-                parameters[sample][leads][13] = np.median(pr_interval / SAMPLING_RATE)
-                parameters[sample][leads][14] = np.median(qrs_complex / SAMPLING_RATE)
-
+                parameters[sample][leads][0] = np.array(np.median(q_dur), get_std_deviation(q_dur))
+                parameters[sample][leads][1] = np.array(np.median(r_dur), get_std_deviation(r_dur))
+                parameters[sample][leads][2] = np.array(np.median(s_dur), get_std_deviation(s_dur))
+                parameters[sample][leads][3] = np.array(np.median(t_dur), get_std_deviation(t_dur))
+                parameters[sample][leads][4] = np.array(np.median(p_dur), get_std_deviation(p_dur))
+                parameters[sample][leads][5] = np.array(np.median(q_amp), get_std_deviation(q_amp))
+                parameters[sample][leads][6] = np.array(np.median(r_amp), get_std_deviation(r_amp))
+                parameters[sample][leads][7] = np.array(np.median(s_amp), get_std_deviation(s_amp))
+                parameters[sample][leads][8] = np.array(np.median(t_amp), get_std_deviation(t_amp))
+                parameters[sample][leads][9] = np.array(np.median(p_amp), get_std_deviation(p_amp))
+                parameters[sample][leads][10] = np.array(np.median(qt_interval) / SAMPLING_RATE,
+                                                         get_std_deviation(qt_interval))
+                parameters[sample][leads][11] = np.array(np.median(pq_interval) / SAMPLING_RATE,
+                                                         get_std_deviation(pq_interval))
+                parameters[sample][leads][12] = np.array(np.median(rr_interval) / SAMPLING_RATE,
+                                                         get_std_deviation(rr_interval))
+                parameters[sample][leads][13] = np.array(np.median(pr_interval) / SAMPLING_RATE,
+                                                         get_std_deviation(pr_interval))
+                parameters[sample][leads][14] = np.array(np.median(qrs_complex) / SAMPLING_RATE,
+                                                         get_std_deviation(qrs_complex))
             else:
                 parameters[sample][leads][::] = 0
 
@@ -90,13 +100,14 @@ def task(_tar):
     q = manager.Queue()
 
     # Init processes
-    task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
-    task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
-    task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
-    task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
-    task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
-    task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
-    task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
+    task1 = multiprocessing.Process(target=_tar, args=(0, 2444, 12, q), name="task1")
+    task2 = multiprocessing.Process(target=_tar, args=(2444, 4888, 12, q), name="task2")
+    task3 = multiprocessing.Process(target=_tar, args=(4888, 7332, 12, q), name="Task3")
+    task4 = multiprocessing.Process(target=_tar, args=(7332, 9776, 12, q), name="Task4")
+    task5 = multiprocessing.Process(target=_tar, args=(9776, 12220, 12, q), name="Task5")
+    task6 = multiprocessing.Process(target=_tar, args=(12220, 14664, 12, q), name="Task6")
+    task7 = multiprocessing.Process(target=_tar, args=(14664, 17108, 12, q), name="Task7")
+    task8 = multiprocessing.Process(target=_tar, args=(17108, QUAN_SAMPLES, 12, q), name="Task8")
 
     # Start processes
     task1.start()
@@ -106,6 +117,7 @@ def task(_tar):
     task5.start()
     task6.start()
     task7.start()
+    task8.start()
 
     # Join processes
     task1.join()
@@ -115,13 +127,14 @@ def task(_tar):
     task5.join()
     task6.join()
     task7.join()
+    task8.join()
 
     # Taking objects off of the queue
     while q.empty() is False:
         key, sample = q.get()
         parameters[key] = sample
 
-    np.save("val_par.npy", parameters)
+    np.save("train_par.npy", parameters)
 
 
 if __name__ == "__main__":
