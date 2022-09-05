@@ -1,6 +1,6 @@
 import numpy as np
 
-from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_period
 from pandas import DataFrame, Series
 from scipy.signal import peak_prominences, peak_widths
 
@@ -103,12 +103,8 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array, _sampling_rate:
     return _signals, _waves_peak
 
 
-def get_width(_signal: np.array, _peaks):
-    _proms = peak_prominences(_signal, _peaks)
-    return peak_widths(_signal, _peaks, prominence_data=_proms)
-
-
 def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
+    # Fix peaks values if they are not an integer
     _q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_Q_Peaks"]])
     _s_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_S_Peaks"]])
     _p_peaks = np.array([peak if isinstance(peak, int) else 0 for peak in _peaks["ECG_P_Peaks"]])
@@ -125,16 +121,31 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
     _r_offs = _peaks["ECG_R_Offsets"]
 
     # Calculate Q boundaries
-    _r_to_q = [i - j for i, j in zip(_r_peaks, _q_peaks)]
-    _q_start = [i - j for i, j in zip(_q_peaks, _r_to_q)]
-    _q_end = [i + j for i, j in zip(_q_peaks, _r_to_q)]
+    _r_to_q = np.subtract(_r_peaks, _q_peaks)
+    _q_start = np.subtract(_q_peaks, _r_to_q)
+    _q_end = np.add(_q_peaks, _r_to_q)
+
+    # Calculate S boundaries
+    _r_to_s = np.subtract(_r_offs, _s_peaks)
+    _s_start = np.subtract(_s_peaks, _r_to_s)
+    _s_end = np.add(_s_peaks, _r_to_s)
 
     # Calculate peaks durations
     _q_dur = np.subtract(_q_end, _q_start)
     _r_dur = np.subtract(_r_offs, _r_ons)
     _t_dur = np.subtract(_t_offs, _t_ons)
     _p_dur = np.subtract(_p_offs, _p_ons)
-    _s_dur = get_width(_signal, _s_peaks)
+    _s_dur = np.subtract(_s_end, _s_start)
+
+    _durations = {"Q_Durations": _q_dur,
+                  "R_Durations": _r_dur,
+                  "T_Durations": _t_dur,
+                  "P_Durations": _p_dur,
+                  "S_Durations": _s_dur,
+                  "Q_Onsets": _q_start,
+                  "Q_Offsets": _q_end}
+
+    return _durations
 
 
 def get_pct_change(peaks: np.array):
@@ -172,40 +183,6 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     return np.array(
         [interval / (_k_const[_gen] * np.sqrt(_heart_cycle)) for interval in _qt]
     )
-
-
-def n_gram_sig(_interval: np.array, _amplitude: np.array, _angle: np.array):
-    """
-        A function that returns the string of letter
-        presenting condition of signs in (intervals, amplitudes, angles)
-
-        parameters:
-            _interval: np.array of intervals
-            _amplitude: np.array of amplitudes
-            _angle: np.array of angles
-
-        return:
-            string of signs conditions
-    """
-    _gram_dict = {
-        "+++": "A",
-        "--+": "B",
-        "+-+": "C",
-        "---": "D",
-        "++-": "F",
-        "-+-": "E"
-    }
-
-    _n_string = ""
-
-    for _inter, _ampl, _angl in zip(_interval, _amplitude, _angle):
-        _n_string += _gram_dict[_inter + _ampl + _angl]
-
-    return _n_string
-
-
-def get_period(_signal: np.array):
-    return signal_period(_signal)
 
 
 def get_dispersion(_peaks: np.array):
