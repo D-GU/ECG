@@ -1,11 +1,19 @@
-import multiprocessing
-import matplotlib.pyplot as plt
-import numpy as np
+# task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
+# task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
+# task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
+# task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
+# task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
+# task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
+# task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
 
+
+import multiprocessing
+
+from time import time
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("train.npy")
+raw_data = get_raw_data("val.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]
 SAMPLING_RATE = 100
@@ -13,7 +21,7 @@ SAMPLING_RATE = 100
 parameters = np.array(
     [np.array(
         [np.array(
-            [np.float64(0) for pars in range(15)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
+            [np.array for pars in range(15)]) for ch in range(12)]) for sample in range(QUAN_SAMPLES)])
 
 
 def get_params(_st, _end, _leads, _queue):
@@ -22,11 +30,12 @@ def get_params(_st, _end, _leads, _queue):
             lead = raw_data[sample][:, leads]
 
             if np.max(lead) == 0:
-                parameters[sample][leads][::] = 0
+                for parameter in range(15):
+                    parameters[sample][leads][parameter] = np.array([0, 0])
                 continue
 
             # Get preprocessed data, such as cleaned signal, R-Peaks etc
-            signals, info = preprocess(lead)
+            signals, info = preprocess(lead, SAMPLING_RATE)
 
             # Cleaned ECG signal
             clean_signal = signals["ECG_Clean"]
@@ -65,28 +74,29 @@ def get_params(_st, _end, _leads, _queue):
                 qrs_complex = get_intervals(peaks_dur["Q_Onsets"], "qrs", *peaks["ECG_S_Peaks"])
 
                 # Assign values to the positions
-                parameters[sample][leads][0] = np.array(np.median(q_dur), get_std_deviation(q_dur))
-                parameters[sample][leads][1] = np.array(np.median(r_dur), get_std_deviation(r_dur))
-                parameters[sample][leads][2] = np.array(np.median(s_dur), get_std_deviation(s_dur))
-                parameters[sample][leads][3] = np.array(np.median(t_dur), get_std_deviation(t_dur))
-                parameters[sample][leads][4] = np.array(np.median(p_dur), get_std_deviation(p_dur))
-                parameters[sample][leads][5] = np.array(np.median(q_amp), get_std_deviation(q_amp))
-                parameters[sample][leads][6] = np.array(np.median(r_amp), get_std_deviation(r_amp))
-                parameters[sample][leads][7] = np.array(np.median(s_amp), get_std_deviation(s_amp))
-                parameters[sample][leads][8] = np.array(np.median(t_amp), get_std_deviation(t_amp))
-                parameters[sample][leads][9] = np.array(np.median(p_amp), get_std_deviation(p_amp))
-                parameters[sample][leads][10] = np.array(np.median(qt_interval) / SAMPLING_RATE,
-                                                         get_std_deviation(qt_interval))
-                parameters[sample][leads][11] = np.array(np.median(pq_interval) / SAMPLING_RATE,
-                                                         get_std_deviation(pq_interval))
-                parameters[sample][leads][12] = np.array(np.median(rr_interval) / SAMPLING_RATE,
-                                                         get_std_deviation(rr_interval))
-                parameters[sample][leads][13] = np.array(np.median(pr_interval) / SAMPLING_RATE,
-                                                         get_std_deviation(pr_interval))
-                parameters[sample][leads][14] = np.array(np.median(qrs_complex) / SAMPLING_RATE,
-                                                         get_std_deviation(qrs_complex))
+                parameters[sample][leads][0] = np.array([np.mean(q_dur) / SAMPLING_RATE, get_std_deviation(q_dur)])
+                parameters[sample][leads][1] = np.array([np.mean(r_dur) / SAMPLING_RATE, get_std_deviation(r_dur)])
+                parameters[sample][leads][2] = np.array([np.mean(s_dur) / SAMPLING_RATE, get_std_deviation(s_dur)])
+                parameters[sample][leads][3] = np.array([np.mean(t_dur) / SAMPLING_RATE, get_std_deviation(t_dur)])
+                parameters[sample][leads][4] = np.array([np.mean(p_dur) / SAMPLING_RATE, get_std_deviation(p_dur)])
+                parameters[sample][leads][5] = np.array([np.mean(q_amp) / SAMPLING_RATE, get_std_deviation(q_amp)])
+                parameters[sample][leads][6] = np.array([np.mean(r_amp) / SAMPLING_RATE, get_std_deviation(r_amp)])
+                parameters[sample][leads][7] = np.array([np.mean(s_amp) / SAMPLING_RATE, get_std_deviation(s_amp)])
+                parameters[sample][leads][8] = np.array([np.mean(t_amp) / SAMPLING_RATE, get_std_deviation(t_amp)])
+                parameters[sample][leads][9] = np.array([np.mean(p_amp) / SAMPLING_RATE, get_std_deviation(p_amp)])
+                parameters[sample][leads][10] = np.array(
+                    [np.mean(qt_interval) / SAMPLING_RATE, get_std_deviation(qt_interval)])
+                parameters[sample][leads][11] = np.array(
+                    [np.mean(pq_interval) / SAMPLING_RATE, get_std_deviation(pq_interval)])
+                parameters[sample][leads][12] = np.array(
+                    [np.mean(rr_interval) / SAMPLING_RATE, get_std_deviation(rr_interval)])
+                parameters[sample][leads][13] = np.array(
+                    [np.mean(pr_interval) / SAMPLING_RATE, get_std_deviation(pr_interval)])
+                parameters[sample][leads][14] = np.array(
+                    [np.mean(qrs_complex) / SAMPLING_RATE, get_std_deviation(qrs_complex)])
             else:
-                parameters[sample][leads][::] = 0
+                for parameter in range(15):
+                    parameters[sample][leads][parameter] = np.array([0, 0])
 
         print(sample)
 
@@ -100,14 +110,13 @@ def task(_tar):
     q = manager.Queue()
 
     # Init processes
-    task1 = multiprocessing.Process(target=_tar, args=(0, 2444, 12, q), name="task1")
-    task2 = multiprocessing.Process(target=_tar, args=(2444, 4888, 12, q), name="task2")
-    task3 = multiprocessing.Process(target=_tar, args=(4888, 7332, 12, q), name="Task3")
-    task4 = multiprocessing.Process(target=_tar, args=(7332, 9776, 12, q), name="Task4")
-    task5 = multiprocessing.Process(target=_tar, args=(9776, 12220, 12, q), name="Task5")
-    task6 = multiprocessing.Process(target=_tar, args=(12220, 14664, 12, q), name="Task6")
-    task7 = multiprocessing.Process(target=_tar, args=(14664, 17108, 12, q), name="Task7")
-    task8 = multiprocessing.Process(target=_tar, args=(17108, QUAN_SAMPLES, 12, q), name="Task8")
+    task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
+    task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
+    task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
+    task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
+    task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
+    task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
+    task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
 
     # Start processes
     task1.start()
@@ -117,7 +126,6 @@ def task(_tar):
     task5.start()
     task6.start()
     task7.start()
-    task8.start()
 
     # Join processes
     task1.join()
@@ -127,15 +135,16 @@ def task(_tar):
     task5.join()
     task6.join()
     task7.join()
-    task8.join()
 
     # Taking objects off of the queue
     while q.empty() is False:
         key, sample = q.get()
         parameters[key] = sample
 
-    np.save("train_par.npy", parameters)
+    np.save("val_ecg_parameters.npy", parameters)
 
 
 if __name__ == "__main__":
+    start = time()
     task(get_params)
+    print("%s seconds - " % (time() - start))

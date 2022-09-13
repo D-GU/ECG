@@ -5,7 +5,7 @@ from pandas import DataFrame, Series
 from scipy.signal import peak_prominences, peak_widths
 
 
-def preprocess(_ecg_signal):
+def preprocess(_ecg_signal, _sampling_rate):
     """
     Processing the signal to get first pieces of data to analyze
 
@@ -24,11 +24,11 @@ def preprocess(_ecg_signal):
 
     # Get cleaned signal from the data frame, so we can find peaks
 
-    _ecg_clean_signal = ecg_clean(_ecg_signal, sampling_rate=100)
+    _ecg_clean_signal = ecg_clean(_ecg_signal, sampling_rate=_sampling_rate)
 
     # Get peaks from the cleaned signal
     _instant_peaks, _r_peaks = ecg_peaks(_ecg_clean_signal,
-                                         sampling_rate=100)
+                                         sampling_rate=_sampling_rate)
 
     # Getting the rate based on the signal peaks
 
