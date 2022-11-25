@@ -137,13 +137,16 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
     _p_dur = np.subtract(_p_offs, _p_ons)
     _s_dur = np.subtract(_s_end, _s_start)
 
-    _durations = {"Q_Durations": _q_dur,
-                  "R_Durations": _r_dur,
-                  "T_Durations": _t_dur,
-                  "P_Durations": _p_dur,
-                  "S_Durations": _s_dur,
-                  "Q_Onsets": _q_start,
-                  "Q_Offsets": _q_end}
+    # Assign durations to a dictionary
+    _durations = {
+        "Q_Durations": _q_dur,
+        "R_Durations": _r_dur,
+        "T_Durations": _t_dur,
+        "P_Durations": _p_dur,
+        "S_Durations": _s_dur,
+        "Q_Onsets": _q_start,
+        "Q_Offsets": _q_end
+    }
 
     return _durations
 
@@ -181,7 +184,7 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     }
 
     return np.array(
-        [interval / (_k_const[_gen] * np.sqrt(_heart_cycle)) for interval in _qt]
+        [interval / (_k_const[_gen.lower()] * np.sqrt(_heart_cycle)) for interval in _qt]
     )
 
 

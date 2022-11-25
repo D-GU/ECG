@@ -8,12 +8,13 @@
 
 
 import multiprocessing
+import processes
 
 from time import time
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("val.npy")
+raw_data = get_raw_data("parameters.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]
 SAMPLING_RATE = 100
@@ -29,6 +30,8 @@ def get_params(_st, _end, _leads, _queue):
         for leads in range(_leads):
             lead = raw_data[sample][:, leads]
 
+            # if signal is 0-ish than all parameters equals to 0,
+            # and we move on to next signal
             if np.max(lead) == 0:
                 for parameter in range(15):
                     parameters[sample][leads][parameter] = np.array([0, 0])
@@ -43,13 +46,15 @@ def get_params(_st, _end, _leads, _queue):
             # Get R-Peaks
             r_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in info["ECG_R_Peaks"]])
 
+            # if there are less than 5 r peaks positions - analysis undoable
             if r_peaks.size > 5:
                 # Find Q-Peaks, S-Peaks, T-Peaks
                 _, peaks = get_qst_peaks(clean_signal, r_peaks, SAMPLING_RATE)
 
-                # Get Q, S, P, T peaks durations
+                # Get all peaks durations
                 peaks_dur = get_durations(_signal=clean_signal, _peaks=peaks, _r_peaks=r_peaks)
 
+                # Get Q, R, S, T, P peaks durations
                 q_dur = peaks_dur["Q_Durations"]
                 r_dur = peaks_dur["R_Durations"]
                 s_dur = peaks_dur["S_Durations"]
@@ -65,8 +70,7 @@ def get_params(_st, _end, _leads, _queue):
                 t_amp = np.array(
                     [lead[peak] if isinstance(peak, int) and peak != 0 else 0 for peak in peaks["ECG_T_Peaks"]])
 
-                # Get main intervals lengths (use median in future analysis)
-
+                # Get main intervals lengths (using mean)
                 qt_interval = get_intervals(peaks_dur["Q_Onsets"], "qt", *peaks["ECG_T_Onsets"])
                 pq_interval = get_intervals(peaks["ECG_P_Onsets"], "pq", *peaks_dur["Q_Onsets"])
                 rr_interval = get_intervals(peaks["ECG_R_Onsets"], 'rr')
@@ -146,5 +150,8 @@ def task(_tar):
 
 if __name__ == "__main__":
     start = time()
-    task(get_params)
-    print("%s seconds - " % (time() - start))
+    # task(get_params)
+    x = processes.ProcessCalculation(tasks=17111)
+
+    x.get_args()
+    print("%s seconds" % (time() - start))
