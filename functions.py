@@ -176,6 +176,7 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
     return:
         array: array of MS coefficients
     """
+
     _k_const = {
         "man": 0.37,
         "men": 0.37,

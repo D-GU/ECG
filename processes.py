@@ -15,7 +15,7 @@ class ProcessCalculation:
 
     def get_args(self):
         if self.tasks <= 0:
-            raise Exception(f"A number of processes: {self.tasks} should be > 0")
+            raise Exception(f"A number of processes is {self.tasks} should be > 0")
 
         start = 0  # start number of task
         end = self.separator  # end number of task
