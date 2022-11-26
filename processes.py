@@ -1,5 +1,6 @@
 import multiprocessing as mp
 import numpy as np
+import pandas as pd
 
 
 class ProcessCalculation:

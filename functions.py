@@ -174,7 +174,7 @@ def get_mech_systole(_qt: np.array, _heart_cycle: np.float64, _gen: str):
         _heart_cycle: Constant, representing heart cycle
 
     return:
-        array: array of MS coefficients
+        array: array of Mechanic Systole coefficients
     """
 
     _k_const = {
