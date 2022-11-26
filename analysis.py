@@ -16,7 +16,7 @@ from raw_data import get_raw_data
 
 raw_data = get_raw_data("__.npy")
 
-QUAN_SAMPLES = raw_data.shape[0]
+QUAN_SAMPLES = raw_data.shape[0]  # Quantity of samples
 SAMPLING_RATE = 100
 
 parameters = np.array(
@@ -151,7 +151,7 @@ def task(_tar):
 if __name__ == "__main__":
     start = time()
     # task(get_params)
-    x = processes.ProcessCalculation(tasks=17111)
+    x = processes.ProcessCalculation(tasks=17111, target=get_params)
 
     x.get_args()
     print("%s seconds" % (time() - start))

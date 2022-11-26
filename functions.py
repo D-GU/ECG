@@ -1,8 +1,7 @@
 import numpy as np
 
-from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_period
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean
 from pandas import DataFrame, Series
-from scipy.signal import peak_prominences, peak_widths
 
 
 def preprocess(_ecg_signal, _sampling_rate):

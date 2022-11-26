@@ -1,10 +1,9 @@
 import multiprocessing as mp
 import numpy as np
-import pandas as pd
 
 
 class ProcessCalculation:
-    def __init__(self, tasks: int):
+    def __init__(self, tasks: int, target):
         self.number_cores = mp.cpu_count()  # A number of cores current PC has
         self.tasks = tasks  # A number of processes that should be calculated
         self.separator = int(np.ceil(self.tasks / self.number_cores))  # A number that separates each individual process
