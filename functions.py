@@ -96,7 +96,7 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array, _sampling_rate:
         sampling_rate=_sampling_rate,
         method="dwt",
         show=False,
-        show_type="all"
+        show_type="peaks"
     )
 
     return _signals, _waves_peak
