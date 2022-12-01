@@ -14,7 +14,7 @@ from time import time
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("__.npy")
+raw_data = get_raw_data("_.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]  # Quantity of samples
 SAMPLING_RATE = 100
