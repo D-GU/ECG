@@ -1,11 +1,14 @@
 import matplotlib.pyplot as plt
+import ecg_plot
+import raw_data
 
+from matplotlib.lines import Line2D
 from functions import *
 from processes import *
 from raw_data import get_raw_data
 
 # Get data
-data = get_raw_data("train.npy")
+data = get_raw_data("ecg_ptbxl.npy")
 
 # Init hyperparameters
 sampling_rate = 100  # Sampling rate
@@ -17,60 +20,43 @@ def get_amplitude(_signal, _time_coordinates: np.array):
 
 def visualize_peaks(_signal, *args):
     _names = ["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"]
+    _color = ["ro", "yo", "rd", "go", "bo"]
 
     # Set resolution of the plots
-    plt.rcParams['figure.dpi'] = 300
+    plt.rcParams["figure.dpi"] = 250
 
-    # Quantity of graphs
-    _graphs_quan = len(args)
+    plt.minorticks_on()
 
-    # How many rows on subplots
-    _x = _graphs_quan // 2
-
-    # How many columns of subplots
-    _y = _graphs_quan - _x
-
-    # Init the sheet and plots
-    fig, ax = plt.subplots(_x, _y)
-
-    # Distance between plots
-    fig.tight_layout(pad=1.70)
-
-    # Get amplitudes of peaks
-    _amp = get_amplitude(_signal, args[0])
+    # Make the major grid
+    plt.grid(which='major', linestyle='-', color='red', linewidth='0.25')
+    # Make the minor grid
+    plt.grid(which='minor', linestyle=':', color='black', linewidth='0.25')
 
     # Counter of args (Needed for appropriate names and peaks conformity)
-    counter = -1
+    plt.plot(_signal, color="black", linewidth=1.25)
 
-    for x in range(_x):
-        for y in range(_y):
+    for counter, args in enumerate(args):
+        _amp = get_amplitude(_signal, args)
+        plt.plot(args, _amp, _color[counter])
 
-            # If x and y == 0 then the plot is just signal
-            if 0 == x == y:
-                ax[x, y].set_title("ECG Signal")
-                ax[x, y].plot(_signal, color="red")
-                continue
+        # Put peak values in the markers
+        for amplitude in range(len(_amp)):
+            plt.text(
+                args[amplitude],
+                _amp[amplitude],
+                s=str(f"{_amp[amplitude]: .3f}"),
+                fontsize=2,
+                horizontalalignment="center",
+                verticalalignment="center"
+            )
 
-            counter += 1
-            _amp = get_amplitude(_signal, args[counter])
+    _legend = [Line2D([], [], marker="o", color="red", label="R_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="yellow", label="Q_Peaks", markersize=4),
+               Line2D([], [], marker="d", color="red", label="S_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="green", label="T_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="blue", label="P_Peaks", markersize=4)]
 
-            # Put peaks amplitudes on the signal
-            ax[x, y].plot(_signal, color="red")
-            ax[x, y].plot(args[counter], _amp, "yo")
-
-            # Put peak values on the "dots"
-            for amplitude in range(len(_amp)):
-                ax[x, y].text(
-                    args[counter][amplitude],
-                    _amp[amplitude],
-                    s=str(f"{_amp[amplitude]: .3f}"),
-                    fontsize=4,
-                    horizontalalignment='center',
-                    verticalalignment='center'
-                )
-
-            # Put the title on the subplot
-            ax[x, y].set_title(f"{_names[counter]}", fontdict={"size": 10})
+    plt.legend(handles=_legend, loc="upper left", fontsize="x-small")
 
     plt.show()
 
