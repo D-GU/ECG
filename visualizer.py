@@ -28,7 +28,7 @@ def visualize_peaks(_signal, *args):
     plt.minorticks_on()
 
     # Make the major grid
-    plt.grid(which='major', linestyle='-', color='red', linewidth='0.25')
+    plt.grid(which='major', linestyle='-', color='red', linewidth='0.5')
     # Make the minor grid
     plt.grid(which='minor', linestyle=':', color='black', linewidth='0.25')
 
@@ -40,11 +40,11 @@ def visualize_peaks(_signal, *args):
         plt.plot(args, _amp, _color[counter])
 
         # Put peak values in the markers
-        for amplitude in range(len(_amp)):
+        for idx, amplitude in enumerate(_amp):
             plt.text(
-                args[amplitude],
-                _amp[amplitude],
-                s=str(f"{_amp[amplitude]: .3f}"),
+                args[idx],
+                amplitude,
+                s=str(f"{_amp[idx]: .3f}"),
                 fontsize=2,
                 horizontalalignment="center",
                 verticalalignment="center"
@@ -75,6 +75,8 @@ def get_parameters(_signal: np.array, _sampling_rate: int):
     _s_peaks = _all_peaks["ECG_S_Peaks"]
     _t_peaks = _all_peaks["ECG_T_Peaks"]
 
+    _durations, _boundaries = get_durations(_signal, _all_peaks, _r_peaks)
+
     visualize_peaks(
         _cleaned_signal,
         _r_peaks,
@@ -85,4 +87,4 @@ def get_parameters(_signal: np.array, _sampling_rate: int):
     )
 
 
-get_parameters(data[0][:, 5], 100)
+get_parameters(data[0][:, 0], 100)

@@ -103,6 +103,20 @@ def get_qst_peaks(_cleaned_signal: np.array, _r_peaks: np.array, _sampling_rate:
 
 
 def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
+    """
+        Calculates intervals durations
+
+        parameter:
+            _signal: ECG signal data
+            _all_peaks: All peaks that been found while preprocessing the data
+            _r_peaks: R peaks that been found while preprocessing the data
+
+        returns:
+            _durations: A dict containing intervals durations
+            _boundaries: A dict containing onsets and offsets of certain peaks
+
+    """
+
     # Fix peaks values if they are not an integer
     _q_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_Q_Peaks"]])
     _s_peaks = np.array([peak if isinstance(peak, np.int64) else 0 for peak in _peaks["ECG_S_Peaks"]])
@@ -136,6 +150,15 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
     _p_dur = np.subtract(_p_offs, _p_ons)
     _s_dur = np.subtract(_s_end, _s_start)
 
+    # Assign boundaries to a dictionary
+    _boundaries = {
+        "Q_Peaks": np.array([(_start, _end) for _start, _end in zip(_q_start, _q_end)]),
+        "R_Peaks": np.array([(_start, _end) for _start, _end in zip(_r_ons, _r_offs)]),
+        "S_Peaks": np.array([(_start, _end) for _start, _end in zip(_s_start, _s_end)]),
+        "T_Peaks": np.array([(_start, _end) for _start, _end in zip(_t_ons, _t_offs)]),
+        "P_Peaks": np.array([(_start, _end) for _start, _end in zip(_p_ons, _p_offs)])
+    }
+
     # Assign durations to a dictionary
     _durations = {
         "Q_Durations": _q_dur,
@@ -147,7 +170,7 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
         "Q_Offsets": _q_end
     }
 
-    return _durations
+    return _durations, _boundaries
 
 
 def get_pct_change(peaks: np.array):

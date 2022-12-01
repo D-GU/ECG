@@ -52,7 +52,7 @@ def get_params(_st, _end, _leads, _queue):
                 _, peaks = get_qst_peaks(clean_signal, r_peaks, SAMPLING_RATE)
 
                 # Get all peaks durations
-                peaks_dur = get_durations(_signal=clean_signal, _peaks=peaks, _r_peaks=r_peaks)
+                peaks_dur, = get_durations(_signal=clean_signal, _peaks=peaks, _r_peaks=r_peaks)
 
                 # Get Q, R, S, T, P peaks durations
                 q_dur = peaks_dur["Q_Durations"]
