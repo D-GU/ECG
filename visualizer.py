@@ -1,7 +1,9 @@
 import matplotlib.pyplot as plt
-import ecg_plot
+import numpy as np
+
 import raw_data
 
+from matplotlib.ticker import AutoMinorLocator
 from matplotlib.lines import Line2D
 from functions import *
 from processes import *
@@ -18,19 +20,19 @@ def get_amplitude(_signal, _time_coordinates: np.array):
     return np.array([_signal[i] for i in _time_coordinates])
 
 
-def visualize_peaks(_signal, *args):
-    _names = ["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"]
-    _color = ["ro", "yo", "rd", "go", "bo"]
+def visualize_peaks(_signal, _names, *args):
+    _color = ["ro", "yo", "mo", "go", "bo"]
 
     # Set resolution of the plots
-    plt.rcParams["figure.dpi"] = 250
+    plt.rcParams["figure.figsize"] = [35, 35]
+    plt.rcParams["figure.dpi"] = 300
 
     plt.minorticks_on()
 
     # Make the major grid
-    plt.grid(which='major', linestyle='-', color='red', linewidth='0.5')
+    plt.grid(which='major', linestyle='-', color='red', linewidth=1)
     # Make the minor grid
-    plt.grid(which='minor', linestyle=':', color='black', linewidth='0.25')
+    plt.grid(which='minor', linestyle=':', color='black', linewidth=0.5)
 
     # Counter of args (Needed for appropriate names and peaks conformity)
     plt.plot(_signal, color="black", linewidth=1.25)
@@ -45,46 +47,91 @@ def visualize_peaks(_signal, *args):
                 args[idx],
                 amplitude,
                 s=str(f"{_amp[idx]: .3f}"),
-                fontsize=2,
+                fontsize=2.5,
                 horizontalalignment="center",
                 verticalalignment="center"
             )
 
-    _legend = [Line2D([], [], marker="o", color="red", label="R_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="yellow", label="Q_Peaks", markersize=4),
-               Line2D([], [], marker="d", color="red", label="S_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="green", label="T_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="blue", label="P_Peaks", markersize=4)]
+    _legend = [Line2D([], [], marker="o", color="r", label="R_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="y", label="Q_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
+               Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)]
 
     plt.legend(handles=_legend, loc="upper left", fontsize="x-small")
 
-    plt.show()
+    return 0
+
+
+def visualize_segments(_signal, _boundaries):
+    # define colors
+    _color = ["c", "y", "m", "g", "b"]
+
+    # Assign each segment to their own kind
+    _q_bound = _boundaries["Q_Peaks"]
+    _r_bound = _boundaries["R_Peaks"]
+    _s_bound = _boundaries["S_Peaks"]
+    _t_bound = _boundaries["T_Peaks"]
+    _p_bound = _boundaries["P_Peaks"]
+
+    _qt_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _t_bound)])
+    _pq_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_p_bound, _q_bound)])
+    _rr_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_r_bound, _r_bound)])
+    _pr_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_p_bound, _r_bound)])
+    _qrs_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _s_bound)])
+
+    _intervals = np.array([
+        _qt_interval,
+        _pq_interval,
+        _rr_interval,
+        _pr_interval,
+        _qrs_interval]
+    )
+
+    for idx, intervals in enumerate(_intervals):
+        plt.vlines(x=intervals, colors=_color[idx], ymin=0, ymax=1.25, lw=0.5)
 
     return 0
 
 
 def get_parameters(_signal: np.array, _sampling_rate: int):
-    _preprocessed, info = preprocess(_signal, _sampling_rate)
+    # Names of the peaks to display them on the plot
+    _names_peaks = ["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"]
+
+    # Names of the segments to display them on the plot
+    _names_segments = ["qt_interval", "pq_interval", "rr_interval", "pr_interval", "QRS_interval"]
+
+    _preprocessed, info = preprocess(_signal, _sampling_rate)  # preprocessed data and R Peaks
     _cleaned_signal = _preprocessed["ECG_Clean"]
     _r_peaks = info["ECG_R_Peaks"]
 
     _, _all_peaks = get_qst_peaks(_cleaned_signal, _r_peaks, _sampling_rate)
 
+    # Assign each peak to their own kind
     _q_peaks = _all_peaks["ECG_Q_Peaks"]
     _p_peaks = _all_peaks["ECG_P_Peaks"]
     _s_peaks = _all_peaks["ECG_S_Peaks"]
     _t_peaks = _all_peaks["ECG_T_Peaks"]
 
+    # Get peaks durations and boundaries
     _durations, _boundaries = get_durations(_signal, _all_peaks, _r_peaks)
 
     visualize_peaks(
         _cleaned_signal,
-        _r_peaks,
-        _q_peaks,
-        _s_peaks,
-        _t_peaks,
-        _p_peaks,
+        _names_peaks,
+        *(_r_peaks,
+          _q_peaks,
+          _s_peaks,
+          _t_peaks,
+          _p_peaks)
     )
+
+    visualize_segments(
+        _cleaned_signal,
+        _boundaries
+    )
+
+    plt.show()
 
 
 get_parameters(data[0][:, 0], 100)
