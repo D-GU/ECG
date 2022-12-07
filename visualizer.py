@@ -30,12 +30,12 @@ def visualize_peaks(_signal, _names, *args):
     plt.minorticks_on()
 
     # Make the major grid
-    plt.grid(which='major', linestyle='-', color='red', linewidth=1)
+    # plt.grid(which='major', linestyle='-', color='red', linewidth=0.75)
     # Make the minor grid
-    plt.grid(which='minor', linestyle=':', color='black', linewidth=0.5)
+    # plt.grid(which='minor', linestyle=':', color='black', linewidth=0.5)
 
     # Counter of args (Needed for appropriate names and peaks conformity)
-    plt.plot(_signal, color="black", linewidth=1.25)
+    plt.plot(_signal, color="0.5", linewidth=1.25)
 
     for counter, args in enumerate(args):
         _amp = get_amplitude(_signal, args)
@@ -64,6 +64,10 @@ def visualize_peaks(_signal, _names, *args):
 
 
 def visualize_segments(_signal, _boundaries):
+    # Highest and lowest points of interval boundaries
+    _highest_point = 0.099
+    _lowest_point = _highest_point * -1
+
     # define colors
     _color = ["c", "y", "m", "g", "b"]
 
@@ -74,11 +78,15 @@ def visualize_segments(_signal, _boundaries):
     _t_bound = _boundaries["T_Peaks"]
     _p_bound = _boundaries["P_Peaks"]
 
+    # Make the intervals
     _qt_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _t_bound)])
-    _pq_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_p_bound, _q_bound)])
+    _pq_interval = np.array([(_start[1], _end[0]) for _start, _end in zip(_p_bound, _q_bound)])
     _rr_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_r_bound, _r_bound)])
-    _pr_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_p_bound, _r_bound)])
+    _pr_interval = np.array([(_start[1], _end[0]) for _start, _end in zip(_p_bound, _r_bound)])
     _qrs_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _s_bound)])
+
+    # Names of the intervals
+    _names = ["QT", "PQ", "RR", "PR", "QRS"]
 
     _intervals = np.array([
         _qt_interval,
@@ -89,7 +97,33 @@ def visualize_segments(_signal, _boundaries):
     )
 
     for idx, intervals in enumerate(_intervals):
-        plt.vlines(x=intervals, colors=_color[idx], ymin=0, ymax=1.25, lw=0.5)
+        for sub_interval in range(len(intervals)):
+            _start, _end = intervals[sub_interval]
+            _mid = (_end + _start) / 2
+
+            _interval_len = _end - _start
+            _interval_name = _names[idx]
+
+            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.15, lw=0.56)
+            plt.arrow(
+                x=_start + 0.1,
+                y=_lowest_point,
+                dx=_interval_len - 0.1,
+                dy=0,
+                width=0.00001,
+                color="green",
+                length_includes_head=True
+            )
+
+            plt.text(
+                x=_mid,
+                y=_lowest_point - 0.001,
+                s=_interval_name,
+                fontsize=2.5,
+                horizontalalignment="center",
+                verticalalignment="center"
+            )
+
 
     return 0
 
