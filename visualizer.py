@@ -1,3 +1,5 @@
+import random
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -20,7 +22,7 @@ def get_amplitude(_signal, _time_coordinates: np.array):
     return np.array([_signal[i] for i in _time_coordinates])
 
 
-def visualize_peaks(_signal, _names, *args):
+def visualize_peaks(_signal, _names, _amplitudes, *args):
     _color = ["ro", "yo", "mo", "go", "bo"]
 
     # Set resolution of the plots
@@ -37,16 +39,15 @@ def visualize_peaks(_signal, _names, *args):
     # Counter of args (Needed for appropriate names and peaks conformity)
     plt.plot(_signal, color="0.5", linewidth=1.25)
 
-    for counter, args in enumerate(args):
-        _amp = get_amplitude(_signal, args)
-        plt.plot(args, _amp, _color[counter])
+    for counter, (args, amps) in enumerate(zip(args, _amplitudes)):
+        plt.plot(args, amps, _color[counter])
 
         # Put peak values in the markers
-        for idx, amplitude in enumerate(_amp):
+        for idx, amplitude in enumerate(amps):
             plt.text(
                 args[idx],
                 amplitude,
-                s=str(f"{_amp[idx]: .3f}"),
+                s=str(f"{amps[idx]: .3f}"),
                 fontsize=2.5,
                 horizontalalignment="center",
                 verticalalignment="center"
@@ -63,7 +64,7 @@ def visualize_peaks(_signal, _names, *args):
     return 0
 
 
-def visualize_segments(_signal, _boundaries):
+def visualize_segments(_signal, _boundaries, _amplitudes):
     # Highest and lowest points of interval boundaries
     _highest_point = 0.099
     _lowest_point = _highest_point * -1
@@ -72,8 +73,8 @@ def visualize_segments(_signal, _boundaries):
     _color = ["c", "y", "m", "g", "b"]
 
     # Assign each segment to their own kind
-    _q_bound = _boundaries["Q_Peaks"]
     _r_bound = _boundaries["R_Peaks"]
+    _q_bound = _boundaries["Q_Peaks"]
     _s_bound = _boundaries["S_Peaks"]
     _t_bound = _boundaries["T_Peaks"]
     _p_bound = _boundaries["P_Peaks"]
@@ -88,6 +89,7 @@ def visualize_segments(_signal, _boundaries):
     # Names of the intervals
     _names = ["QT", "PQ", "RR", "PR", "QRS"]
 
+    # Collect intervals in array
     _intervals = np.array([
         _qt_interval,
         _pq_interval,
@@ -96,7 +98,7 @@ def visualize_segments(_signal, _boundaries):
         _qrs_interval]
     )
 
-    for idx, intervals in enumerate(_intervals):
+    for idx, (amplitudes, intervals) in enumerate(zip(_amplitudes, _intervals)):
         for sub_interval in range(len(intervals)):
             _start, _end = intervals[sub_interval]
             _mid = (_end + _start) / 2
@@ -104,13 +106,20 @@ def visualize_segments(_signal, _boundaries):
             _interval_len = _end - _start
             _interval_name = _names[idx]
 
-            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.15, lw=0.56)
+            print(f"start = {_start}, end = {_end}, interval len = {_interval_len}")
+
+            # Plot vertical lines representing the boundaries of intervals
+            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.15, lw=0.52)
+            _lowest_point_arrow = random.uniform(-0.090, -0.099)
+
+            # Plot arrows representing each individual interval
             plt.arrow(
-                x=_start + 0.1,
-                y=_lowest_point,
-                dx=_interval_len - 0.1,
+                x=_start + 0.3,
+                y=_lowest_point_arrow,
+                dx=_interval_len - 0.3,
                 dy=0,
-                width=0.00001,
+                width=0.0001,
+                head_width=1e-13,
                 color="green",
                 length_includes_head=True
             )
@@ -123,7 +132,6 @@ def visualize_segments(_signal, _boundaries):
                 horizontalalignment="center",
                 verticalalignment="center"
             )
-
 
     return 0
 
@@ -147,12 +155,26 @@ def get_parameters(_signal: np.array, _sampling_rate: int):
     _s_peaks = _all_peaks["ECG_S_Peaks"]
     _t_peaks = _all_peaks["ECG_T_Peaks"]
 
+    # Calculate amplitudes of all peaks
+    _q_amplitudes = get_amplitude(_cleaned_signal, _q_peaks)
+    _p_amplitudes = get_amplitude(_cleaned_signal, _p_peaks)
+    _s_amplitudes = get_amplitude(_cleaned_signal, _s_peaks)
+    _t_amplitudes = get_amplitude(_cleaned_signal, _t_peaks)
+    _r_amplitudes = get_amplitude(_cleaned_signal, _r_peaks)
+
+    # Collect all peaks amplitudes in array
+    _amplitudes = np.array(
+        [_r_amplitudes, _q_amplitudes, _s_amplitudes, _t_amplitudes, _p_amplitudes]
+    )
+
     # Get peaks durations and boundaries
     _durations, _boundaries = get_durations(_signal, _all_peaks, _r_peaks)
 
+    # Plot peaks
     visualize_peaks(
         _cleaned_signal,
         _names_peaks,
+        _amplitudes,
         *(_r_peaks,
           _q_peaks,
           _s_peaks,
@@ -160,9 +182,11 @@ def get_parameters(_signal: np.array, _sampling_rate: int):
           _p_peaks)
     )
 
+    # Plot segments(intervals)
     visualize_segments(
         _cleaned_signal,
-        _boundaries
+        _boundaries,
+        _amplitudes
     )
 
     plt.show()
