@@ -119,7 +119,6 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
     )
 
     for idx, (amplitudes, intervals) in enumerate(zip(_amplitudes, _intervals)):
-        print(f"Name = {_names[idx]}")
         for sub_interval in range(len(intervals)):
             _start, _end = intervals[sub_interval]
             _mid = (_end + _start) * 0.5
@@ -129,7 +128,6 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
             # Plot vertical lines representing the boundaries of intervals
             plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.50)
 
-            print(f"Show parameters: {_intervals_show_params[idx]:.3f}")
             # Plot arrows representing each individual interval
             plt.arrow(
                 x=_start + 0.3,
