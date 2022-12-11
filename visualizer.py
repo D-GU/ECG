@@ -105,7 +105,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
         2: np.max(_amplitudes[4]),
         3: -0.03 + np.min(_amplitudes[2]),
         4: -0.03 + np.max(_amplitudes[3]),
-        5: -0.05 + np.max(_amplitudes[3])
+        5: -0.2 + np.max(_amplitudes[3])
     }
 
     # Collect intervals in array
