@@ -1,11 +1,9 @@
+import matplotlib.pyplot as plt
+import matplotlib.figure as fig
+import numpy as np
+import raw_data
 import random
 
-import matplotlib.pyplot as plt
-import numpy as np
-
-import raw_data
-
-from matplotlib.ticker import AutoMinorLocator
 from matplotlib.lines import Line2D
 from functions import *
 from processes import *
@@ -22,19 +20,23 @@ def get_amplitude(_signal, _time_coordinates: np.array):
     return np.array([_signal[i] for i in _time_coordinates])
 
 
-def visualize_peaks(_signal, _names, _amplitudes, *args):
-    _color = ["ro", "yo", "mo", "go", "bo"]
-
+def init_plot():
     # Set resolution of the plots
-    plt.rcParams["figure.figsize"] = [35, 35]
-    plt.rcParams["figure.dpi"] = 300
+    # plt.rcParams["figure.figsize"] = [20, 3]
+    # plt.rcParams["figure.dpi"] = 2540 / 1440
 
+    plt.figure(figsize=(200, 1))
     plt.minorticks_on()
+    plt.xticks()
 
     # Make the major grid
     # plt.grid(which='major', linestyle='-', color='red', linewidth=0.75)
     # Make the minor grid
     # plt.grid(which='minor', linestyle=':', color='black', linewidth=0.5)
+
+
+def visualize_peaks(_signal, _names, _amplitudes, *args):
+    _color = ["ro", "yo", "mo", "go", "bo"]
 
     # Counter of args (Needed for appropriate names and peaks conformity)
     plt.plot(_signal, color="0.5", linewidth=1.25)
@@ -53,11 +55,14 @@ def visualize_peaks(_signal, _names, _amplitudes, *args):
                 verticalalignment="center"
             )
 
-    _legend = [Line2D([], [], marker="o", color="r", label="R_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="y", label="Q_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
-               Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)]
+    # Init the legend of the plot
+    _legend = [
+        Line2D([], [], marker="o", color="r", label="R_Peaks", markersize=4),
+        Line2D([], [], marker="o", color="y", label="Q_Peaks", markersize=4),
+        Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
+        Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
+        Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)
+    ]
 
     plt.legend(handles=_legend, loc="upper left", fontsize="x-small")
 
@@ -66,8 +71,8 @@ def visualize_peaks(_signal, _names, _amplitudes, *args):
 
 def visualize_segments(_signal, _boundaries, _amplitudes):
     # Highest and lowest points of interval boundaries
-    _highest_point = 0.099
-    _lowest_point = _highest_point * -1
+    _highest_point = 0.02
+    _lowest_point = -0.080
 
     # define colors
     _color = ["c", "y", "m", "g", "b"]
@@ -79,56 +84,68 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
     _t_bound = _boundaries["T_Peaks"]
     _p_bound = _boundaries["P_Peaks"]
 
-    # Make the intervals
-    _qt_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _t_bound)])
-    _pq_interval = np.array([(_start[1], _end[0]) for _start, _end in zip(_p_bound, _q_bound)])
-    _rr_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_r_bound, _r_bound)])
-    _pr_interval = np.array([(_start[1], _end[0]) for _start, _end in zip(_p_bound, _r_bound)])
-    _qrs_interval = np.array([(_start[0], _end[1]) for _start, _end in zip(_q_bound, _s_bound)])
+    # Init the intervals, segments and complexes
+    _pq_segment = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _q_bound)])
+    _pr_interval = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _r_bound)])
+    _qrs_complex = np.array([(start[0], end[1]) for start, end in zip(_q_bound, _s_bound)])
+    _st_segment = np.array([(start[1], end[0]) for start, end in zip(_s_bound, _t_bound)])
 
-    # Names of the intervals
-    _names = ["QT", "PQ", "RR", "PR", "QRS"]
+    _names = [
+        "Зубец P",
+        "Интервал PR",
+        "Сегмент PQ",
+        "Комплекс QRS",
+        "Сегмент ST",
+        "Зубец T"
+    ]
+
+    _intervals_show_params = {
+        0: 0 - np.max(_amplitudes[4]),
+        1: -0.3 + np.max(_amplitudes[4]),
+        2: np.max(_amplitudes[4]),
+        3: -0.03 + np.min(_amplitudes[2]),
+        4: -0.03 + np.max(_amplitudes[3]),
+        5: -0.05 + np.max(_amplitudes[3])
+    }
 
     # Collect intervals in array
-    _intervals = np.array([
-        _qt_interval,
-        _pq_interval,
-        _rr_interval,
-        _pr_interval,
-        _qrs_interval]
+    _intervals = np.array(
+        [_p_bound,
+         _pr_interval,
+         _pq_segment,
+         _qrs_complex,
+         _st_segment,
+         _t_bound]
     )
 
     for idx, (amplitudes, intervals) in enumerate(zip(_amplitudes, _intervals)):
         for sub_interval in range(len(intervals)):
             _start, _end = intervals[sub_interval]
-            _mid = (_end + _start) / 2
+            _mid = (_end + _start) * 0.5
 
             _interval_len = _end - _start
-            _interval_name = _names[idx]
-
-            print(f"start = {_start}, end = {_end}, interval len = {_interval_len}")
 
             # Plot vertical lines representing the boundaries of intervals
-            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.15, lw=0.52)
-            _lowest_point_arrow = random.uniform(-0.090, -0.099)
+            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.50)
 
+            print(f"Show parameters: {_intervals_show_params[idx]:.3f}")
             # Plot arrows representing each individual interval
             plt.arrow(
                 x=_start + 0.3,
-                y=_lowest_point_arrow,
+                y=_intervals_show_params[idx],
                 dx=_interval_len - 0.3,
                 dy=0,
                 width=0.0001,
                 head_width=1e-13,
-                color="green",
+                color="black",
                 length_includes_head=True
             )
 
             plt.text(
                 x=_mid,
-                y=_lowest_point - 0.001,
-                s=_interval_name,
-                fontsize=2.5,
+                y=_intervals_show_params[idx],
+                s=_names[idx],
+                fontsize=3.5,
                 horizontalalignment="center",
                 verticalalignment="center"
             )
@@ -136,7 +153,9 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
     return 0
 
 
-def get_parameters(_signal: np.array, _sampling_rate: int):
+def plots_parameters(_signal: np.array, _sampling_rate: int):
+    init_plot()
+
     # Names of the peaks to display them on the plot
     _names_peaks = ["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"]
 
@@ -192,4 +211,4 @@ def get_parameters(_signal: np.array, _sampling_rate: int):
     plt.show()
 
 
-get_parameters(data[0][:, 0], 100)
+plots_parameters(data[0][:, 0], 100)
