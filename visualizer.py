@@ -23,7 +23,7 @@ def get_amplitude(_signal, _time_coordinates: np.array):
 def init_plot():
     # Set resolution of the plots
     # plt.rcParams["figure.figsize"] = [20, 3]
-    # plt.rcParams["figure.dpi"] = 2540 / 1440
+    plt.rcParams["figure.dpi"] = 100
 
     plt.figure(figsize=(100, 4))
     plt.minorticks_on()
@@ -101,7 +101,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
 
     _intervals_show_params = {
         0: 0 - np.max(_amplitudes[4]),
-        1: -0.3 + np.max(_amplitudes[4]),
+        1: -0.2 + np.max(_amplitudes[4]),
         2: np.max(_amplitudes[4]),
         3: -0.03 + np.min(_amplitudes[2]),
         4: -0.03 + np.max(_amplitudes[3]),
@@ -210,4 +210,4 @@ def plots_parameters(_signal: np.array, _sampling_rate: int):
     plt.show()
 
 
-plots_parameters(data[0][:, 0], 100)
+plots_parameters(data[0][:, 1], 100)
