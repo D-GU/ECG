@@ -86,7 +86,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
 
     # Init the intervals, segments and complexes
     _pq_segment = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _q_bound)])
-    _pr_interval = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _r_bound)])
+    _pr_interval = np.array([(start[0], end[0]) for start, end in zip(_p_bound, _r_bound)])
     _qrs_complex = np.array([(start[0], end[1]) for start, end in zip(_q_bound, _s_bound)])
     _st_segment = np.array([(start[1], end[0]) for start, end in zip(_s_bound, _t_bound)])
 
@@ -118,7 +118,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
          _t_bound]
     )
 
-    for idx, (amplitudes, intervals) in enumerate(zip(_amplitudes, _intervals)):
+    for idx, intervals in enumerate(_intervals):
         for sub_interval in range(len(intervals)):
             _start, _end = intervals[sub_interval]
             _mid = (_end + _start) * 0.5
