@@ -25,7 +25,7 @@ def init_plot():
     # plt.rcParams["figure.figsize"] = [20, 3]
     # plt.rcParams["figure.dpi"] = 2540 / 1440
 
-    plt.figure(figsize=(200, 1))
+    plt.figure(figsize=(100, 4))
     plt.minorticks_on()
     plt.xticks()
 
@@ -119,6 +119,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
     )
 
     for idx, (amplitudes, intervals) in enumerate(zip(_amplitudes, _intervals)):
+        print(f"Name = {_names[idx]}")
         for sub_interval in range(len(intervals)):
             _start, _end = intervals[sub_interval]
             _mid = (_end + _start) * 0.5
@@ -145,7 +146,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
                 x=_mid,
                 y=_intervals_show_params[idx],
                 s=_names[idx],
-                fontsize=3.5,
+                fontsize=6,
                 horizontalalignment="center",
                 verticalalignment="center"
             )
@@ -183,7 +184,7 @@ def plots_parameters(_signal: np.array, _sampling_rate: int):
 
     # Collect all peaks amplitudes in array
     _amplitudes = np.array(
-        [_r_amplitudes, _q_amplitudes, _s_amplitudes, _t_amplitudes, _p_amplitudes]
+        [_r_amplitudes, _q_amplitudes, _s_amplitudes, _t_amplitudes, _p_amplitudes, 0]
     )
 
     # Get peaks durations and boundaries
