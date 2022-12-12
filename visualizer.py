@@ -90,13 +90,15 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
         "Зубец T"
     ]
 
+    np.set_printoptions(precision=3)
+
     _intervals_show_params = {
-        0: 0 - np.max(_amplitudes[4]),
-        1: -0.2 + np.max(_amplitudes[4]),
-        2: np.max(_amplitudes[4]),
-        3: -0.03 + np.min(_amplitudes[2]),
-        4: -0.32 + np.max(_amplitudes[3]),
-        5: -0.2 + np.max(_amplitudes[3])
+        0: (0 - np.max(_amplitudes[4])),
+        1: (-0.2 + np.max(_amplitudes[4])),
+        2: (np.max(_amplitudes[4])),
+        3: (-0.03 + np.min(_amplitudes[2])),
+        4: (-0.32 + np.max(_amplitudes[3])),
+        5: (-0.2 + np.max(_amplitudes[3]))
     }
 
     # Collect intervals in array
@@ -120,13 +122,23 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
             ax.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.60)
 
             # Plot arrows representing each individual interval
+
+            # ax.annotate(
+            #     f"{_names[idx]}",
+            #     xy=(_start, _intervals_show_params[idx]),
+            #     xytext=(_mid, _intervals_show_params[idx]),
+            #     ha="center",
+            #     va="center",
+            #     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0")
+            # )
+
             ax.arrow(
                 x=_start + 0.05,
                 y=_intervals_show_params[idx],
                 dx=np.abs(_interval_len) - 0.05,
                 dy=0,
-                width=0.0001,
-                head_width=1e-13,
+                width=0.0002,
+                head_width=0.005,
                 color="black",
                 length_includes_head=True
             )
