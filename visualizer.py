@@ -1,8 +1,4 @@
 import matplotlib.pyplot as plt
-import matplotlib.figure as fig
-import numpy as np
-import raw_data
-import random
 
 from matplotlib.lines import Line2D
 from functions import *
@@ -15,38 +11,33 @@ data = get_raw_data("ecg_ptbxl.npy")
 # Init hyperparameters
 sampling_rate = 100  # Sampling rate
 
+fig, ax = plt.subplots(1, 1)
 
-def get_amplitude(_signal, _time_coordinates: np.array):
-    return np.array([_signal[i] for i in _time_coordinates])
+plt.rcParams["figure.dpi"] = 100
+plt.subplots_adjust(
+    left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+)
 
+plt.minorticks_on()
 
-def init_plot():
-    # Set resolution of the plots
-    # plt.rcParams["figure.figsize"] = [20, 3]
-    plt.rcParams["figure.dpi"] = 100
-
-    plt.figure(figsize=(100, 4))
-    plt.minorticks_on()
-    plt.xticks()
-
-    # Make the major grid
-    # plt.grid(which='major', linestyle='-', color='red', linewidth=0.75)
-    # Make the minor grid
-    # plt.grid(which='minor', linestyle=':', color='black', linewidth=0.5)
+# Make the major grid
+ax.grid(which='major', linestyle='-', color='red', linewidth=0.8)
+# Make the minor grid
+ax.grid(which='minor', linestyle=':', color='black', linewidth=0.3)
 
 
 def visualize_peaks(_signal, _names, _amplitudes, *args):
     _color = ["ro", "yo", "mo", "go", "bo"]
 
     # Counter of args (Needed for appropriate names and peaks conformity)
-    plt.plot(_signal, color="0.5", linewidth=1.25)
+    ax.plot(_signal, color="0.5", linewidth=1.25)
 
     for counter, (args, amps) in enumerate(zip(args, _amplitudes)):
-        plt.plot(args, amps, _color[counter])
+        ax.plot(args, amps, _color[counter])
 
         # Put peak values in the markers
         for idx, amplitude in enumerate(amps):
-            plt.text(
+            ax.text(
                 args[idx],
                 amplitude,
                 s=str(f"{amps[idx]: .3f}"),
@@ -64,7 +55,7 @@ def visualize_peaks(_signal, _names, _amplitudes, *args):
         Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)
     ]
 
-    plt.legend(handles=_legend, loc="upper left", fontsize="x-small")
+    ax.legend(handles=_legend, loc="upper left", fontsize="x-small")
 
     return 0
 
@@ -104,7 +95,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
         1: -0.2 + np.max(_amplitudes[4]),
         2: np.max(_amplitudes[4]),
         3: -0.03 + np.min(_amplitudes[2]),
-        4: -0.03 + np.max(_amplitudes[3]),
+        4: -0.32 + np.max(_amplitudes[3]),
         5: -0.2 + np.max(_amplitudes[3])
     }
 
@@ -123,16 +114,16 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
             _start, _end = intervals[sub_interval]
             _mid = (_end + _start) * 0.5
 
-            _interval_len = _end - _start
+            _interval_len = (_end - _start) - 0.03
 
             # Plot vertical lines representing the boundaries of intervals
-            plt.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.50)
+            ax.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.60)
 
             # Plot arrows representing each individual interval
-            plt.arrow(
-                x=_start + 0.3,
+            ax.arrow(
+                x=_start + 0.05,
                 y=_intervals_show_params[idx],
-                dx=_interval_len - 0.3,
+                dx=np.abs(_interval_len) - 0.05,
                 dy=0,
                 width=0.0001,
                 head_width=1e-13,
@@ -140,7 +131,7 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
                 length_includes_head=True
             )
 
-            plt.text(
+            ax.text(
                 x=_mid,
                 y=_intervals_show_params[idx],
                 s=_names[idx],
@@ -153,8 +144,6 @@ def visualize_segments(_signal, _boundaries, _amplitudes):
 
 
 def plots_parameters(_signal: np.array, _sampling_rate: int):
-    init_plot()
-
     # Names of the peaks to display them on the plot
     _names_peaks = ["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"]
 
@@ -182,7 +171,7 @@ def plots_parameters(_signal: np.array, _sampling_rate: int):
 
     # Collect all peaks amplitudes in array
     _amplitudes = np.array(
-        [_r_amplitudes, _q_amplitudes, _s_amplitudes, _t_amplitudes, _p_amplitudes, 0]
+        [_r_amplitudes, _q_amplitudes, _s_amplitudes, _t_amplitudes, _p_amplitudes]
     )
 
     # Get peaks durations and boundaries
@@ -207,7 +196,6 @@ def plots_parameters(_signal: np.array, _sampling_rate: int):
         _amplitudes
     )
 
-    plt.show()
-
 
 plots_parameters(data[0][:, 1], 100)
+plt.show()

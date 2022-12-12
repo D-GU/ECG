@@ -172,6 +172,8 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
 
     return _durations, _boundaries
 
+def get_amplitude(_signal, _time_coordinates: np.array):
+    return np.array([_signal[i] for i in _time_coordinates])
 
 def get_pct_change(peaks: np.array):
     """
