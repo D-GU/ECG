@@ -152,8 +152,8 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
 
     # Assign boundaries to a dictionary
     _boundaries = {
-        "Q_Peaks": np.array([(_start, _end) for _start, _end in zip(_q_start, _q_end)]),
         "R_Peaks": np.array([(_start, _end) for _start, _end in zip(_r_ons, _r_offs)]),
+        "Q_Peaks": np.array([(_start, _end) for _start, _end in zip(_q_start, _q_end)]),
         "S_Peaks": np.array([(_start, _end) for _start, _end in zip(_s_start, _s_end)]),
         "T_Peaks": np.array([(_start, _end) for _start, _end in zip(_t_ons, _t_offs)]),
         "P_Peaks": np.array([(_start, _end) for _start, _end in zip(_p_ons, _p_offs)])
@@ -172,8 +172,10 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
 
     return _durations, _boundaries
 
+
 def get_amplitude(_signal, _time_coordinates: np.array):
     return np.array([_signal[i] for i in _time_coordinates])
+
 
 def get_pct_change(peaks: np.array):
     """
