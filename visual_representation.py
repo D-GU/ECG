@@ -16,20 +16,33 @@ class Visualizer:
         self.intervals = self.get_intervals()
 
         # Name of each peak to plot
-        self.peaks_names = np.array({"R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"})
+        self.peaks_names = np.array(["R Peaks", "Q Peaks", "S Peaks", "T Peaks", "P Peaks"])
 
         # Name of each interval(segment) to plot
-        self.intervals_names = np.array({
+        self.intervals_names = np.array([
             "Зубец P",
             "Интервал PR",
             "Сегмент PQ",
             "Комплекс QRS",
             "Сегмент ST",
             "Зубец T"
-        })
+        ])
+
+        # Set intervals show parameters
+
+        self.intervals_show_params = {
+            0: (0 - np.max(self.amplitudes[4])),
+            1: (-0.2 + np.max(self.amplitudes[4])),
+            2: (np.max(self.amplitudes[4])),
+            3: (-0.03 + np.min(self.amplitudes[2])),
+            4: (-0.32 + np.max(self.amplitudes[3])),
+            5: (-0.2 + np.max(self.amplitudes[3]))
+        }
 
         # Set a color to each peak to plot
         self.colors = ["r", "y", "m", "g", "b"]
+
+        self.fig, self.ax = plt.subplots(1, 1)
 
         # Subplots adjustment
         plt.subplots_adjust(
@@ -39,15 +52,15 @@ class Visualizer:
         # Turn on minorticks to draw small grid
         plt.minorticks_on()
 
-        self.fig, self.ax = plt.subplots(1, 1)
+        # self.major_ticks = np.arange(0, 1000, 2)
+        # self.minor_ticks = np.arange(0, 100, 0.04)
 
-        self.major_ticks = np.arange(0, 1000, 0.2)
-        self.minor_ticks = np.arange(0, 100, 0.04)
+        # self.ax.set_ylim(-0.5, 0.5)
+        # self.ax.set_xlim(0, 1000)
 
-        self.ax.set_ylim(-0.5, 0.5)
-        self.ax.set_xlim(0, 1000)
+        # self.ax.set_xticks(np.arange(0, 100, 0.2))
 
-        self.ax.set_xticks(np.arange(0, 100, 0.2))
+        # self.ax.set_xticks(self.major_ticks)
 
         # Make the major grid
         self.ax.grid(which='major', linestyle='-', color='red', linewidth=0.8)
@@ -70,9 +83,9 @@ class Visualizer:
 
         # Put each peak in to an array
         all_peaks.append(_peaks["ECG_Q_Peaks"])
-        all_peaks.append(_peaks["ECG_P_Peaks"])
         all_peaks.append(_peaks["ECG_S_Peaks"])
         all_peaks.append(_peaks["ECG_T_Peaks"])
+        all_peaks.append(_peaks["ECG_P_Peaks"])
 
         return _cleaned_signal, np.array(all_peaks), _peaks
 
@@ -117,11 +130,79 @@ class Visualizer:
 
         return _intervals
 
-    @property
-    def data_visualizer(self):
-        self.ax.plot(self.clean_signal)
-        plt.show()
+    def peaks_data_visualizer(self):
+        self.ax.plot(self.clean_signal, color="0.5", linewidth=1.25)
 
+        for counter, (peaks, amps) in enumerate(zip(self.peaks, self.amplitudes)):
+            self.ax.scatter(peaks, amps, facecolor=self.colors[counter])
+            # self.ax.plot(peaks, amps, self.colors[counter])
+
+            # Put peak values in the markers
+            for idx, amplitude in enumerate(amps):
+                self.ax.text(
+                    peaks[idx],
+                    amplitude,
+                    s=str(f"{amps[idx]: .3f}"),
+                    fontsize=2.5,
+                    horizontalalignment="center",
+                    verticalalignment="center"
+                )
+
+        # Init the legend of the plot
+
+        _legend = [
+            Line2D([], [], marker="o", color="r", label="R_Peaks", markersize=4),
+            Line2D([], [], marker="o", color="y", label="Q_Peaks", markersize=4),
+            Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
+            Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
+            Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)
+        ]
+
+        self.ax.legend(handles=_legend, loc="upper left", fontsize="x-small")
+
+    def intervals_data_visualizer(self):
+        # ax.annotate(
+        #     f"{_names[idx]}",
+        #     xy=(_start, _intervals_show_params[idx]),
+        #     xytext=(_mid, _intervals_show_params[idx]),
+        #     ha="center",
+        #     va="center",
+        #     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0")
+        # )
+        for idx, intervals in enumerate(self.intervals):
+            for sub_interval in range(len(intervals)):
+                _start, _end = intervals[sub_interval]
+                _mid = (_end + _start) * 0.5
+
+                _interval_len = (_end - _start) - 0.03
+
+                # Plot vertical lines representing the boundaries of intervals
+                self.ax.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.60)
+                self.ax.arrow(
+                    x=_start + 0.05,
+                    y=self.intervals_show_params[idx],
+                    dx=np.abs(_interval_len) - 0.05,
+                    dy=0,
+                    width=0.0002,
+                    head_width=0.005,
+                    color="black",
+                    length_includes_head=True
+                )
+
+                self.ax.text(
+                    x=_mid,
+                    y=self.intervals_show_params[idx],
+                    s=self.intervals_names[idx],
+                    fontsize=6,
+                    horizontalalignment="center",
+                    verticalalignment="center"
+                )
+
+    def visualizer(self):
+        self.peaks_data_visualizer()
+        self.intervals_data_visualizer()
+
+        plt.show()
 
 def main():
     data = get_raw_data("ecg_ptbxl.npy")
@@ -129,7 +210,7 @@ def main():
     sampling_rate = 100
 
     x = Visualizer(signal, sampling_rate)
-    print(x.data_visualizer)
+    print(x.visualizer())
 
 
 main()
