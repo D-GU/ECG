@@ -5,11 +5,6 @@ from functions import *
 from processes import *
 from raw_data import get_raw_data
 
-# Subplots adjustment
-plt.subplots_adjust(
-    left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
-)
-
 
 class Visualizer:
     def __init__(self, signal, sampling_rate):
@@ -36,7 +31,28 @@ class Visualizer:
         # Set a color to each peak to plot
         self.colors = ["r", "y", "m", "g", "b"]
 
+        # Subplots adjustment
+        plt.subplots_adjust(
+            left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+        )
+
+        # Turn on minorticks to draw small grid
+        plt.minorticks_on()
+
         self.fig, self.ax = plt.subplots(1, 1)
+
+        self.major_ticks = np.arange(0, 1000, 0.2)
+        self.minor_ticks = np.arange(0, 100, 0.04)
+
+        self.ax.set_ylim(-0.5, 0.5)
+        self.ax.set_xlim(0, 1000)
+
+        self.ax.set_xticks(np.arange(0, 100, 0.2))
+
+        # Make the major grid
+        self.ax.grid(which='major', linestyle='-', color='red', linewidth=0.8)
+        # Make the minor grid
+        self.ax.grid(which='minor', linestyle=':', color='black', linewidth=0.3)
 
     def get_peaks(self):
         """A method fo get peaks"""
@@ -101,6 +117,11 @@ class Visualizer:
 
         return _intervals
 
+    @property
+    def data_visualizer(self):
+        self.ax.plot(self.clean_signal)
+        plt.show()
+
 
 def main():
     data = get_raw_data("ecg_ptbxl.npy")
@@ -108,7 +129,7 @@ def main():
     sampling_rate = 100
 
     x = Visualizer(signal, sampling_rate)
-    print(x.intervals)
+    print(x.data_visualizer)
 
 
 main()

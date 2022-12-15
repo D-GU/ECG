@@ -210,4 +210,4 @@ def plots_parameters(_signal: np.array, _sampling_rate: int):
 
 
 plots_parameters(data[0][:, 1], 100)
-# plt.show()
+plt.show()
