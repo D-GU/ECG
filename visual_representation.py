@@ -42,7 +42,14 @@ class Visualizer:
         # Set a color to each peak to plot
         self.colors = ["r", "y", "m", "g", "b"]
 
+        # Init canvas and plot
         self.fig, self.ax = plt.subplots(1, 1)
+
+        # Init figure manager
+        self.fig_manager = plt.get_current_fig_manager()
+
+        # Set full_screen_toggle to show image in full screen
+        self.fig_manager.full_screen_toggle()
 
         # Subplots adjustment
         plt.subplots_adjust(
@@ -113,9 +120,9 @@ class Visualizer:
         _p_bound = _boundaries["P_Peaks"]
 
         # Init the intervals, segments and complexes
-        _pq_segment = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _q_bound)])
+        _pq_segment = np.array([(start[1], end[0]) for start, end in zip(_p_bound, _r_bound)])
         _pr_interval = np.array([(start[0], end[0]) for start, end in zip(_p_bound, _r_bound)])
-        _qrs_complex = np.array([(start[0], end[1]) for start, end in zip(_q_bound, _s_bound)])
+        _qrs_complex = np.array([(start[0], end[1]) for start, end in zip(_r_bound, _s_bound)])
         _st_segment = np.array([(start[1], end[0]) for start, end in zip(_s_bound, _t_bound)])
 
         # Collect intervals in array
@@ -161,39 +168,48 @@ class Visualizer:
         self.ax.legend(handles=_legend, loc="upper left", fontsize="x-small")
 
     def intervals_data_visualizer(self):
-        # ax.annotate(
-        #     f"{_names[idx]}",
-        #     xy=(_start, _intervals_show_params[idx]),
-        #     xytext=(_mid, _intervals_show_params[idx]),
-        #     ha="center",
-        #     va="center",
-        #     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0")
-        # )
         for idx, intervals in enumerate(self.intervals):
             for sub_interval in range(len(intervals)):
                 _start, _end = intervals[sub_interval]
                 _mid = (_end + _start) * 0.5
 
-                _interval_len = (_end - _start) - 0.03
+                _interval_len = (_end - _start) - 0.09
 
                 # Plot vertical lines representing the boundaries of intervals
-                self.ax.vlines(x=intervals, colors="k", ymin=-0.15, ymax=0.25, lw=0.60)
+                self.ax.vlines(
+                    x=intervals,
+                    colors="k",
+                    ymin=self.intervals_show_params[idx],
+                    ymax=0.25,
+                    lw=0.60
+                )
+
                 self.ax.arrow(
                     x=_start + 0.05,
                     y=self.intervals_show_params[idx],
-                    dx=np.abs(_interval_len) - 0.05,
+                    dx=_interval_len,
                     dy=0,
                     width=0.0002,
                     head_width=0.005,
                     color="black",
-                    length_includes_head=True
+                    length_includes_head=True,
+                    rasterized=True
                 )
+
+                # ax.annotate(
+                #     f"{_names[idx]}",
+                #     xy=(_start, _intervals_show_params[idx]),
+                #     xytext=(_mid, _intervals_show_params[idx]),
+                #     ha="center",
+                #     va="center",
+                #     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0")
+                # )
 
                 self.ax.text(
                     x=_mid,
-                    y=self.intervals_show_params[idx],
+                    y=self.intervals_show_params[idx] + 0.015,
                     s=self.intervals_names[idx],
-                    fontsize=6,
+                    fontsize=8,
                     horizontalalignment="center",
                     verticalalignment="center"
                 )
@@ -203,6 +219,7 @@ class Visualizer:
         self.intervals_data_visualizer()
 
         plt.show()
+
 
 def main():
     data = get_raw_data("ecg_ptbxl.npy")
