@@ -173,7 +173,7 @@ class Visualizer:
                 _start, _end = intervals[sub_interval]
                 _mid = (_end + _start) * 0.5
 
-                _interval_len = (_end - _start) - 0.09
+                _interval_len = (_end - _start) - 0.095
 
                 # Plot vertical lines representing the boundaries of intervals
                 self.ax.vlines(
