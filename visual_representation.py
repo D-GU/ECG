@@ -7,9 +7,17 @@ from raw_data import get_raw_data
 
 
 class Visualizer:
-    def __init__(self, signal, sampling_rate):
+    def __init__(self, signal, sampling_rate, seconds, record_speed):
         self.signal = signal
+
         self.sampling_rate = sampling_rate
+        self.record_speed = record_speed
+        self.seconds = seconds
+
+        self.grid_major_bound = self.sampling_rate * self.seconds
+        self.grid_minor_bound = self.sampling_rate * self.record_speed
+        self.step_minor = (self.grid_minor_bound / self.record_speed) / self.record_speed
+
         self.clean_signal = self.get_peaks()[0]
         self.peaks = self.get_peaks()[1]
         self.amplitudes = self.get_amplitudes()
@@ -29,14 +37,13 @@ class Visualizer:
         ])
 
         # Set intervals show parameters
-
         self.intervals_show_params = {
             0: (0 - np.max(self.amplitudes[4])),
-            1: (-0.2 + np.max(self.amplitudes[4])),
-            2: (np.max(self.amplitudes[4])),
+            1: (0 - np.max(self.amplitudes[4])) + 0.05,
+            2: (0 - np.max(self.amplitudes[4])) + 0.09,
             3: (-0.03 + np.min(self.amplitudes[2])),
-            4: (-0.32 + np.max(self.amplitudes[3])),
-            5: (-0.2 + np.max(self.amplitudes[3]))
+            4: (-0.03 + np.min(self.amplitudes[2])),
+            5: (-0.03 + np.min(self.amplitudes[2]))
         }
 
         # Set a color to each peak to plot
@@ -56,18 +63,21 @@ class Visualizer:
             left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
         )
 
-        # Turn on minorticks to draw small grid
+        # Plot the signal
+        self.ax.plot(self.clean_signal, color="0.350", linewidth=1.25)
+
+        # Turn on minor-ticks to draw small grid
         plt.minorticks_on()
 
-        # self.major_ticks = np.arange(0, 1000, 2)
-        # self.minor_ticks = np.arange(0, 100, 0.04)
+        # Init grid parameters
+        self.major_ticks = np.arange(0, self.grid_major_bound, self.sampling_rate)
+        self.minor_ticks = np.arange(0, self.grid_minor_bound, self.step_minor)
 
-        # self.ax.set_ylim(-0.5, 0.5)
-        # self.ax.set_xlim(0, 1000)
+        # Set major grid show parameters
+        self.ax.set_xticks(self.major_ticks)
 
-        # self.ax.set_xticks(np.arange(0, 100, 0.2))
-
-        # self.ax.set_xticks(self.major_ticks)
+        # Set minor grid show parameters
+        self.ax.set_xticks(self.minor_ticks, minor=True)
 
         # Make the major grid
         self.ax.grid(which='major', linestyle='-', color='red', linewidth=0.8)
@@ -138,8 +148,6 @@ class Visualizer:
         return _intervals
 
     def peaks_data_visualizer(self):
-        self.ax.plot(self.clean_signal, color="0.5", linewidth=1.25)
-
         for counter, (peaks, amps) in enumerate(zip(self.peaks, self.amplitudes)):
             self.ax.scatter(peaks, amps, facecolor=self.colors[counter])
             # self.ax.plot(peaks, amps, self.colors[counter])
@@ -150,7 +158,7 @@ class Visualizer:
                     peaks[idx],
                     amplitude,
                     s=str(f"{amps[idx]: .3f}"),
-                    fontsize=2.5,
+                    fontsize=8.5,
                     horizontalalignment="center",
                     verticalalignment="center"
                 )
@@ -162,7 +170,8 @@ class Visualizer:
             Line2D([], [], marker="o", color="y", label="Q_Peaks", markersize=4),
             Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
             Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
-            Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4)
+            Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4),
+            Line2D([], [], marker="", color="black", label=f"{self.sampling_rate}kHZ", markersize=4)
         ]
 
         self.ax.legend(handles=_legend, loc="upper left", fontsize="x-small")
@@ -173,19 +182,19 @@ class Visualizer:
                 _start, _end = intervals[sub_interval]
                 _mid = (_end + _start) * 0.5
 
-                _interval_len = (_end - _start) - 0.095
+                _interval_len = (_end - _start) - 0.6
 
                 # Plot vertical lines representing the boundaries of intervals
                 self.ax.vlines(
                     x=intervals,
                     colors="k",
                     ymin=self.intervals_show_params[idx],
-                    ymax=0.25,
+                    ymax=0.15,
                     lw=0.60
                 )
 
                 self.ax.arrow(
-                    x=_start + 0.05,
+                    x=_start + 0.3,
                     y=self.intervals_show_params[idx],
                     dx=_interval_len,
                     dy=0,
@@ -223,11 +232,12 @@ class Visualizer:
 
 def main():
     data = get_raw_data("ecg_ptbxl.npy")
-    signal = data[0][:, 1]
+    signal = data[0][:, 9]
     sampling_rate = 100
 
-    x = Visualizer(signal, sampling_rate)
-    print(x.visualizer())
+    x = Visualizer(signal, sampling_rate, 10, 25)
+    x.visualizer()
 
 
-main()
+if __name__ == "__main__":
+    main()
