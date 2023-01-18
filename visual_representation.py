@@ -2,21 +2,20 @@ import matplotlib.pyplot as plt
 
 from matplotlib.lines import Line2D
 from functions import *
-from processes import *
 from raw_data import get_raw_data
 
 
 class Visualizer:
-    def __init__(self, signal, sampling_rate, seconds, record_speed):
+    def __init__(self, signal, sampling_rate, seconds, recording_speed):
         self.signal = signal
 
         self.sampling_rate = sampling_rate
-        self.record_speed = record_speed
+        self.recording_speed = recording_speed
         self.seconds = seconds
 
         self.grid_major_bound = self.sampling_rate * self.seconds
-        self.grid_minor_bound = self.sampling_rate * self.record_speed
-        self.step_minor = (self.grid_minor_bound / self.record_speed) / self.record_speed
+        self.grid_minor_bound = self.sampling_rate * self.recording_speed
+        self.step_minor = (self.grid_minor_bound / self.recording_speed) / self.recording_speed
 
         self.clean_signal = self.get_peaks()[0]
         self.peaks = self.get_peaks()[1]
@@ -38,9 +37,9 @@ class Visualizer:
 
         # Set intervals show parameters
         self.intervals_show_params = {
-            0: (0 - np.max(self.amplitudes[4])),
-            1: (0 - np.max(self.amplitudes[4])) + 0.05,
-            2: (0 - np.max(self.amplitudes[4])) + 0.09,
+            0: (np.max(self.amplitudes[4])) + 0.05,
+            1: (0 - np.max(self.amplitudes[4])) + 0.20,
+            2: (0 - np.max(self.amplitudes[4])) + 0.17,
             3: (-0.03 + np.min(self.amplitudes[2])),
             4: (-0.03 + np.min(self.amplitudes[2])),
             5: (-0.03 + np.min(self.amplitudes[2]))
@@ -56,7 +55,7 @@ class Visualizer:
         self.fig_manager = plt.get_current_fig_manager()
 
         # Set full_screen_toggle to show image in full screen
-        self.fig_manager.full_screen_toggle()
+        # self.fig_manager.full_screen_toggle()
 
         # Subplots adjustment
         plt.subplots_adjust(
@@ -81,6 +80,7 @@ class Visualizer:
 
         # Make the major grid
         self.ax.grid(which='major', linestyle='-', color='red', linewidth=0.8)
+
         # Make the minor grid
         self.ax.grid(which='minor', linestyle=':', color='black', linewidth=0.3)
 
@@ -154,9 +154,12 @@ class Visualizer:
 
             # Put peak values in the markers
             for idx, amplitude in enumerate(amps):
+                # Apply bias to a peak to make it look readable
+                bias = 0.03 * (amplitude / np.abs(amplitude))
+
                 self.ax.text(
                     peaks[idx],
-                    amplitude,
+                    amplitude + bias,
                     s=str(f"{amps[idx]: .3f}"),
                     fontsize=8.5,
                     horizontalalignment="center",
@@ -182,7 +185,7 @@ class Visualizer:
                 _start, _end = intervals[sub_interval]
                 _mid = (_end + _start) * 0.5
 
-                _interval_len = (_end - _start) - 0.6
+                _interval_len = (_end - _start) - 1
 
                 # Plot vertical lines representing the boundaries of intervals
                 self.ax.vlines(
@@ -211,14 +214,15 @@ class Visualizer:
                 #     xytext=(_mid, _intervals_show_params[idx]),
                 #     ha="center",
                 #     va="center",
-                #     arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0")
+                #     arrowprops=
+                #     ]dict(arrowstyle="->", connectionstyle="arc3,rad=0")
                 # )
 
                 self.ax.text(
                     x=_mid,
                     y=self.intervals_show_params[idx] + 0.015,
                     s=self.intervals_names[idx],
-                    fontsize=8,
+                    fontsize=7,
                     horizontalalignment="center",
                     verticalalignment="center"
                 )
@@ -234,8 +238,10 @@ def main():
     data = get_raw_data("ecg_ptbxl.npy")
     signal = data[0][:, 9]
     sampling_rate = 100
+    seconds = 10
+    recording_speed = 25
 
-    x = Visualizer(signal, sampling_rate, 10, 25)
+    x = Visualizer(signal, sampling_rate, seconds, recording_speed)
     x.visualizer()
 
 

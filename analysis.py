@@ -8,13 +8,13 @@
 
 
 import multiprocessing
-import processes
 
+from processes import *
 from time import time
 from functions import *
 from raw_data import get_raw_data
 
-raw_data = get_raw_data("_.npy")
+raw_data = get_raw_data("train_par.npy")
 
 QUAN_SAMPLES = raw_data.shape[0]  # Quantity of samples
 SAMPLING_RATE = 100
@@ -113,45 +113,52 @@ def task(_tar):
     manager = multiprocessing.Manager()
     q = manager.Queue()
 
+    task_to_calculate = ProcessCalculation(tasks=QUAN_SAMPLES, target=_tar)
+    task_box = task_to_calculate.get_task_box(q)
+
+    for i in range(task_to_calculate.number_cores):
+        task_box[i].start()
+
+    for i in range(task_to_calculate.number_cores):
+        task_box[i].join()
+
     # Init processes
-    task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
-    task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
-    task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
-    task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
-    task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
-    task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
-    task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
+    # task1 = multiprocessing.Process(target=_tar, args=(0, 308, 12, q), name="task1")
+    # task2 = multiprocessing.Process(target=_tar, args=(308, 616, 12, q), name="task2")
+    # task3 = multiprocessing.Process(target=_tar, args=(616, 924, 12, q), name="Task3")
+    # task4 = multiprocessing.Process(target=_tar, args=(924, 1232, 12, q), name="Task4")
+    # task5 = multiprocessing.Process(target=_tar, args=(1232, 1540, 12, q), name="Task5")
+    # task6 = multiprocessing.Process(target=_tar, args=(1540, 1848, 12, q), name="Task6")
+    # task7 = multiprocessing.Process(target=_tar, args=(1848, QUAN_SAMPLES, 12, q), name="Task7")
 
     # Start processes
-    task1.start()
-    task2.start()
-    task3.start()
-    task4.start()
-    task5.start()
-    task6.start()
-    task7.start()
+    # task1.start()
+    # task2.start()
+    # task3.start()
+    # task4.start()
+    # task5.start()
+    # task6.start()
+    # task7.start()
 
     # Join processes
-    task1.join()
-    task2.join()
-    task3.join()
-    task4.join()
-    task5.join()
-    task6.join()
-    task7.join()
+    # task1.join()
+    # task2.join()
+    # task3.join()
+    # task4.join()
+    # task5.join()
+    # task6.join()
+    # task7.join()
 
     # Taking objects off of the queue
     while q.empty() is False:
         key, sample = q.get()
         parameters[key] = sample
 
-    np.save("val_ecg_parameters.npy", parameters)
+    np.save("train_par.npy", parameters)
 
 
 if __name__ == "__main__":
     start = time()
-    # task(get_params)
-    x = processes.ProcessCalculation(tasks=17111, target=get_params)
+    task(get_params)
 
-    x.get_args()
     print("%s seconds" % (time() - start))
