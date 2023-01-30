@@ -6,44 +6,53 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import CheckButtons
 
+file = np.load("ecg_ptbxl.npy", allow_pickle=True)
+sample = file[0][:, 0]
+
+fig, ax = plt.subplots()
+l, = ax.plot(file[0][:, 0])
+
 class Index:
-    def __init__(self, data, quantity_samples):
+    def __init__(self, data, quantity_samples, sample_id, lead_id):
         self.data = data
         self.quantity_samples = quantity_samples
-
-    lead_ind = 0
-    sample_ind = 0
+        self.lead_ind = lead_id
+        self.sample_ind = sample_id
+        self.to_plot = data[sample_id][:, lead_id]
 
     def lead_next(self, event):
         self.lead_ind += 1
         i = self.lead_ind % 12
-        plt.show(data[])
+        self.to_plot = self.data[self.sample_ind][:, i]
+        l.set_ydata(self.to_plot)
+        plt.draw()
 
     def lead_prev(self, event):
         self.lead_ind -= 1
         i = self.lead_ind % 12
-        self.data = self.data[::][:, i]
-        plt.plot(self.data)
+        self.to_plot = self.data[self.sample_ind][:, i]
+        l.set_ydata(self.to_plot)
+        plt.draw()
 
     def sample_next(self, event):
         self.sample_ind += 1
         i = self.sample_ind % self.quantity_samples
-        self.data = self.data[i][:, 0]
-        plt.plot(self.data)
+        self.to_plot = self.data[i][:, 0]
+        l.set_ydata(self.to_plot)
+        plt.draw()
 
     def sample_prev(self, event):
         self.sample_ind -= 1
         i = self.sample_ind % self.quantity_samples
-        self.data = self.data[i][:, 0]
-        plt.plot(self.data)
+        self.to_plot = self.data[i][:, 0]
+        l.set_ydata(self.to_plot)
+        plt.draw()
 
 
-file = np.load("ecg_ptbxl.npy", allow_pickle=True)
-sample = file[0][:, 0]
-callback = Index(sample, 21430)
 
-fig, ax = plt.subplots()
-ax.plot(sample)
+callback = Index(file, 21430, 0, 0)
+
+
 ax_lead_prev = fig.add_axes([0.1, 0.05, 0.1, 0.075])
 ax_lead_next = fig.add_axes([0.4, 0.05, 0.1, 0.075])
 ax_sample_prev = fig.add_axes([0.7, 0.05, 0.1, 0.075])
@@ -60,6 +69,7 @@ sp.on_clicked(callback.sample_prev)
 sn.on_clicked(callback.sample_next)
 
 plt.show()
+
 
 class Marker:
     def __init__(self, data_folder, sampling_rate):
@@ -86,4 +96,3 @@ class Marker:
         self.t_peaks = ...
         self.t_ons = ...
         self.t_offs = ...
-
