@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
+import numpy as np
 
 from matplotlib.lines import Line2D
-from functions import *
+from functions import get_durations, get_qst_peaks, preprocess, get_amplitude
 from raw_data import get_raw_data
 
 
@@ -227,18 +228,9 @@ class Visualizer:
                     verticalalignment="center"
                 )
 
-    def onclick(self, event):
-        print('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-              (event.button, event.x, event.y, event.xdata, event.ydata))
-
-        self.ax.scatter(event.xdata, event.ydata, facecolor='green')
-        self.ax.plot(event.xdata, event.ydata, ',')
-        self.fig.canvas.draw()
-
     def visualizer(self):
         self.peaks_data_visualizer()
         self.intervals_data_visualizer()
-        # cid = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
 
         plt.show()
 
