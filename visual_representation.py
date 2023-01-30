@@ -238,7 +238,7 @@ class Visualizer:
     def visualizer(self):
         self.peaks_data_visualizer()
         self.intervals_data_visualizer()
-        cid = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
+        # cid = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
 
         plt.show()
 
