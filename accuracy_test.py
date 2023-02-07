@@ -105,17 +105,22 @@ def plot_single_lead_ecg(index, lead):
 def plot_signal_with_annotation(index):
     signal, samples = get_full_ecg(index)
 
-    sample = signal[:, LEADS.index("i")]
+    sample = signal[:, LEADS.index("ii")]
 
     # extract sample from annotations
     wfdb.plot_items(signal, samples)
 
 
 signals, samples = get_full_ecg(200)
-my_sample = signals[:, LEADS.index("avf")]
+my_sample = signals[:, LEADS.index("ii")]
 
-sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=my_sample)
-sample.visualizer()
+#sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=my_sample)
+#sample.visualizer()
 
-plot_single_lead_ecg(200, "avf")
+annotations = get_annotations(200, "ii")
+annotations_symbols = get_annotations_symbols(200, "ii")
+
+for a, s in zip(annotations, annotations_symbols):
+    print(a, s)
+#plot_single_lead_ecg(200, "ii")
 plt.show()
