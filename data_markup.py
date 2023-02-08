@@ -21,6 +21,7 @@ plt.subplots_adjust(
 ax.set_xlabel("0 / 21429\n0 / 12")
 ax.plot(sample)
 
+
 class Index:
     def __init__(self, data, quantity_samples, sample_id, lead_id):
         self.data = data
@@ -28,6 +29,27 @@ class Index:
         self.lead_ind = lead_id
         self.sample_ind = sample_id
         self.to_plot = data[sample_id][:, lead_id]
+
+        self.p_peaks = []
+        self.q_peaks = []
+        self.r_peaks = []
+        self.s_peaks = []
+        self.t_peaks = []
+
+        self.p_ons = []
+        self.p_offs = []
+
+        self.q_ons = []
+        self.q_offs = []
+
+        self.r_ons = []
+        self.r_offs = []
+
+        self.s_ons = []
+        self.s_offs = []
+
+        self.t_ons = []
+        self.t_offs = []
 
     def lead_next(self, event):
         self.lead_ind += 1
@@ -76,6 +98,10 @@ class Index:
 
         # l.set_ydata(self.to_plot)
         plt.draw()
+
+    def peak_markup(self, event):
+        ...
+
 
 callback = Index(file, 21430, 0, 0)
 

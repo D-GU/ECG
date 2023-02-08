@@ -90,7 +90,6 @@ def get_single_lead_ecg_with_symbols(index, lead):
 
     return signal, np.array(list(data))
 
-
 # plot single lead ecg with annotations
 def plot_single_lead_ecg(index, lead):
     signal, samples = get_single_lead_ecg(index, lead)
@@ -120,7 +119,5 @@ my_sample = signals[:, LEADS.index("ii")]
 annotations = get_annotations(200, "ii")
 annotations_symbols = get_annotations_symbols(200, "ii")
 
-for a, s in zip(annotations, annotations_symbols):
-    print(a, s)
 #plot_single_lead_ecg(200, "ii")
 plt.show()
