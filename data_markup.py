@@ -10,18 +10,16 @@ file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
 
 fig, ax = plt.subplots()
-l, = ax.plot(file[0][:, 0])
 
-ax.text(x=3,
-        y=3,
-        s="RRRRR",
-        fontsize=7,
-        horizontalalignment="center",
-        verticalalignment="center"
-        )
+fig_manager = plt.get_current_fig_manager()
 
-print(f"0 / 21430\n 0 / 12")
+fig_manager.full_screen_toggle()
+plt.subplots_adjust(
+    left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+)
 
+ax.set_xlabel("0 / 21429\n0 / 12")
+ax.plot(sample)
 
 class Index:
     def __init__(self, data, quantity_samples, sample_id, lead_id):
@@ -35,50 +33,61 @@ class Index:
         self.lead_ind += 1
         i = self.lead_ind % 12
         self.to_plot = self.data[self.sample_ind][:, i]
-        l.set_ydata(self.to_plot)
-        print(f"{self.sample_ind % self.quantity_samples} / 21430\n {self.lead_ind % 12} / 12")
 
+        ax.clear()
+        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{i % 12} / 11")
+        ax.plot(self.to_plot)
+
+        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def lead_prev(self, event):
         self.lead_ind -= 1
         i = self.lead_ind % 12
         self.to_plot = self.data[self.sample_ind][:, i]
-        l.set_ydata(self.to_plot)
-        print(f"{self.sample_ind % self.quantity_samples} / 21430\n {self.lead_ind % 12} / 12")
 
+        ax.clear()
+        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{i % 12} / 11")
+        ax.plot(self.to_plot)
+
+        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def sample_next(self, event):
         self.sample_ind += 1
         i = self.sample_ind % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
-        l.set_ydata(self.to_plot)
-        print(f"{self.sample_ind % self.quantity_samples} / 21430\n {self.lead_ind % 12} / 12")
 
+        ax.clear()
+        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{0} / 11")
+        ax.plot(self.to_plot)
+
+        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def sample_prev(self, event):
         self.sample_ind -= 1
         i = self.sample_ind % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
-        l.set_ydata(self.to_plot)
-        print(f"{self.sample_ind % self.quantity_samples} / 21430\n {self.lead_ind % 12} / 12")
 
+        ax.clear()
+        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{0} / 11")
+        ax.plot(self.to_plot)
+
+        # l.set_ydata(self.to_plot)
         plt.draw()
-
 
 callback = Index(file, 21430, 0, 0)
 
 ax_lead_prev = fig.add_axes([0.1, 0.05, 0.1, 0.075])
-ax_lead_next = fig.add_axes([0.4, 0.05, 0.1, 0.075])
-ax_sample_prev = fig.add_axes([0.7, 0.05, 0.1, 0.075])
-ax_sample_next = fig.add_axes([0.9, 0.05, 0.1, 0.075])
+ax_lead_next = fig.add_axes([0.2, 0.05, 0.1, 0.075])
+ax_sample_prev = fig.add_axes([0.3, 0.05, 0.1, 0.075])
+ax_sample_next = fig.add_axes([0.4, 0.05, 0.1, 0.075])
 
-bln = Button(ax_lead_next, "LN")
-blp = Button(ax_lead_prev, "LP")
-sn = Button(ax_sample_next, "SN")
-sp = Button(ax_sample_prev, "SP")
+bln = Button(ax_lead_next, "lead >>")
+blp = Button(ax_lead_prev, "lead <<")
+sn = Button(ax_sample_next, "sample >>")
+sp = Button(ax_sample_prev, "sample <<")
 
 bln.on_clicked(callback.lead_next)
 blp.on_clicked(callback.lead_prev)

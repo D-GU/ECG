@@ -175,7 +175,7 @@ class Visualizer:
             Line2D([], [], marker="o", color="m", label="S_Peaks", markersize=4),
             Line2D([], [], marker="o", color="g", label="T_Peaks", markersize=4),
             Line2D([], [], marker="o", color="b", label="P_Peaks", markersize=4),
-            Line2D([], [], marker="", color="black", label=f"{self.sampling_rate}kHZ", markersize=4)
+            Line2D([], [], marker="", color="black", label=f"{self.sampling_rate} kHZ", markersize=4)
         ]
 
         self.ax.legend(handles=_legend, loc="upper left", fontsize="x-small")
