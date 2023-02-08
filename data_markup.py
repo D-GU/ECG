@@ -1,24 +1,33 @@
 import os
 import numpy as np
-import pandas as pd
 import matplotlib.pyplot as plt
 
 from matplotlib.widgets import Button
-from matplotlib.widgets import CheckButtons
+from matplotlib.markers import MarkerStyle
+
+# If session file is already exists then
+# read the data from it and continue markup it
+if not os.path.isfile("user_session.dat"):
+    with open("user_session.dat", "wb") as session_file:
+        session_file.write(bytearray([0, 0]))
 
 file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
 
 fig, ax = plt.subplots()
 
+# Get figure manager
 fig_manager = plt.get_current_fig_manager()
 
+# Put the figure on full screen mode
 fig_manager.full_screen_toggle()
+
+# Adjust the subplots to make it wider
 plt.subplots_adjust(
     left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
 )
 
-ax.set_xlabel("0 / 21429\n0 / 12")
+ax.set_xlabel("0 / 21429\n0 / 11")
 ax.plot(sample)
 
 
@@ -30,6 +39,13 @@ class Index:
         self.sample_ind = sample_id
         self.to_plot = data[sample_id][:, lead_id]
 
+        self.parameters = np.array(
+            [np.array(
+                [np.array(
+                    [np.array for parameters in range(15)]) for lead in range(12)]) for _ in range(self.quantity_samples)])
+
+        self.colors = ["red", "black", "blue", "green", "purple"]
+        self.box = ["p", "q", "r", "s", "t"]
         self.p_peaks = []
         self.q_peaks = []
         self.r_peaks = []
