@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 
 from matplotlib.widgets import Button
 from matplotlib.markers import MarkerStyle
+from matplotlib.widgets import TextBox
+
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -14,153 +16,202 @@ if not os.path.isfile("user_session.dat"):
 file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
 
-fig, ax = plt.subplots()
+
+# fig, ax = plt.subplots()
 
 # Get figure manager
-fig_manager = plt.get_current_fig_manager()
+# fig_manager = plt.get_current_fig_manager()
 
 # Put the figure on full screen mode
-fig_manager.full_screen_toggle()
+# fig_manager.full_screen_toggle()
 
 # Adjust the subplots to make it wider
-plt.subplots_adjust(
-    left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
-)
+# plt.subplots_adjust(
+#     left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+# )
 
-ax.set_xlabel("0 / 21429\n0 / 11")
-ax.plot(sample)
+# ax.set_xlabel("0 / 21429\n0 / 11")
+# ax.plot(sample)
 
 
 class Index:
-    def __init__(self, data, quantity_samples, sample_id, lead_id):
+    def __init__(self, data, quantity_samples, sample_id, lead_id, plot):
+        self.ax = plot
         self.data = data
         self.quantity_samples = quantity_samples
-        self.lead_ind = lead_id
-        self.sample_ind = sample_id
+        self.lead_id = lead_id
+        self.sample_id = sample_id
         self.to_plot = data[sample_id][:, lead_id]
 
-        self.parameters = np.array(
-            [np.array(
-                [np.array(
-                    [np.array for parameters in range(15)]) for lead in range(12)]) for _ in range(self.quantity_samples)])
-
-        self.colors = ["red", "black", "blue", "green", "purple"]
-        self.box = ["p", "q", "r", "s", "t"]
-        self.p_peaks = []
-        self.q_peaks = []
-        self.r_peaks = []
-        self.s_peaks = []
-        self.t_peaks = []
-
-        self.p_ons = []
-        self.p_offs = []
-
-        self.q_ons = []
-        self.q_offs = []
-
-        self.r_ons = []
-        self.r_offs = []
-
-        self.s_ons = []
-        self.s_offs = []
-
-        self.t_ons = []
-        self.t_offs = []
+        self.slider_sample_values = np.array([_ for _ in range(self.quantity_samples)])
+        self.slider_lead_values = np.array([_ for _ in range(12)])
 
     def lead_next(self, event):
-        self.lead_ind += 1
-        i = self.lead_ind % 12
-        self.to_plot = self.data[self.sample_ind][:, i]
+        self.lead_id += 1
+        i = self.lead_id % 12
+        self.to_plot = self.data[self.sample_id][:, i]
 
-        ax.clear()
-        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{i % 12} / 11")
-        ax.plot(self.to_plot)
+        self.ax.clear()
+        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
+        self.ax.plot(self.to_plot)
 
-        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def lead_prev(self, event):
-        self.lead_ind -= 1
-        i = self.lead_ind % 12
-        self.to_plot = self.data[self.sample_ind][:, i]
+        self.lead_id -= 1
+        i = self.lead_id % 12
+        self.to_plot = self.data[self.sample_id][:, i]
 
-        ax.clear()
-        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{i % 12} / 11")
-        ax.plot(self.to_plot)
+        self.ax.clear()
+        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
+        self.ax.plot(self.to_plot)
 
-        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def sample_next(self, event):
-        self.sample_ind += 1
-        i = self.sample_ind % self.quantity_samples
+        self.sample_id += 1
+        i = self.sample_id % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
 
-        ax.clear()
-        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{0} / 11")
-        ax.plot(self.to_plot)
+        self.ax.clear()
+        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+        self.ax.plot(self.to_plot)
 
-        # l.set_ydata(self.to_plot)
         plt.draw()
 
     def sample_prev(self, event):
-        self.sample_ind -= 1
-        i = self.sample_ind % self.quantity_samples
+        self.sample_id -= 1
+        i = self.sample_id % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
 
-        ax.clear()
-        ax.set_xlabel(f"{self.sample_ind % self.quantity_samples} / 21429\n{0} / 11")
-        ax.plot(self.to_plot)
+        self.ax.clear()
+        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+        self.ax.plot(self.to_plot)
 
-        # l.set_ydata(self.to_plot)
         plt.draw()
 
-    def peak_markup(self, event):
-        ...
+    def submit_sample_data(self, text):
+        if not text.isnumeric():
+            self.sample_id = self.sample_id
+            self.to_plot = self.data[self.sample_id][:, 0]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
+
+        if int(text) < 0 or int(text) > self.quantity_samples - 1:
+            self.sample_id = self.sample_id
+            self.to_plot = self.data[self.sample_id][:, 0]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
+
+        else:
+            self.sample_id = int(text)
+            self.to_plot = self.data[self.sample_id][:, 0]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
+
+    def submit_lead_data(self, text):
+        if not text.isnumeric():
+            self.lead_id = self.lead_id
+            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
+
+        if int(text) < 0 or int(text) > self.quantity_samples - 1:
+            self.lead_id = self.lead_id
+            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
+
+        else:
+            self.lead_id = int(text)
+            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+
+            self.ax.clear()
+            self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
+            self.ax.plot(self.to_plot)
+
+            plt.draw()
 
 
-callback = Index(file, 21430, 0, 0)
+class MarkUpper:
+    def __init__(self, data_path, session_file_path):
+        self.session_file_path = session_file_path
+        self.data = data_path
 
-ax_lead_prev = fig.add_axes([0.1, 0.05, 0.1, 0.075])
-ax_lead_next = fig.add_axes([0.2, 0.05, 0.1, 0.075])
-ax_sample_prev = fig.add_axes([0.3, 0.05, 0.1, 0.075])
-ax_sample_next = fig.add_axes([0.4, 0.05, 0.1, 0.075])
+        self.sample_id = ...  # Should be reading it from the session file
+        self.lead_id = ...  # Should be reading it from the session file
 
-bln = Button(ax_lead_next, "lead >>")
-blp = Button(ax_lead_prev, "lead <<")
-sn = Button(ax_sample_next, "sample >>")
-sp = Button(ax_sample_prev, "sample <<")
+        # Init plot and figure
+        self.fig, self.ax = plt.subplots()
 
-bln.on_clicked(callback.lead_next)
-blp.on_clicked(callback.lead_prev)
-sp.on_clicked(callback.sample_prev)
-sn.on_clicked(callback.sample_next)
+        # Get figure manager
+        self.fig_manager = plt.get_current_fig_manager()
 
-plt.show()
+        # Put the figure on full screen mode
+        self.fig_manager.full_screen_toggle()
 
+        # Adjust the subplots to make it wider
+        plt.subplots_adjust(
+            left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+        )
 
-class Marker:
-    def __init__(self, data_folder, sampling_rate):
-        self.sample_box = np.load(data_folder, allow_pickle=True)
-        self.sample_quan = self.sample_box.shape[0]
-        self.sampling_rate = sampling_rate
+        self.ax.set_xlabel("0 / 21429\n0 / 11")
+        self.ax.plot(sample)
 
-        self.p_peaks = ...
-        self.p_ons = ...
-        self.p_offs = ...
+    def run_markup(self):
+        callback = Index(self.data, 21430, 0, 0, self.ax)
 
-        self.r_peaks = ...
-        self.r_ons = ...
-        self.r_offs = ...
+        # Init axes of text buttons
+        ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
+        ax_lead_text_box = self.fig.add_axes([0.1, 0.15, 0.03, 0.075])
 
-        self.q_peaks = ...
-        self.q_ons = ...
-        self.q_offs = ...
+        # Init text buttons
+        text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
+        text_lead_button = TextBox(ax_lead_text_box, "Lead ID", initial=str(0))
 
-        self.s_peaks = ...
-        self.s_ons = ...
-        self.s_offs = ...
+        # Connect text buttons to callback function
+        text_sample_button.on_submit(callback.submit_sample_data)
+        text_lead_button.on_submit(callback.submit_lead_data)
 
-        self.t_peaks = ...
-        self.t_ons = ...
-        self.t_offs = ...
+        # Init prev and next buttons axes
+        ax_lead_prev = self.fig.add_axes([0.1, 0.05, 0.1, 0.075])
+        ax_lead_next = self.fig.add_axes([0.2, 0.05, 0.1, 0.075])
+        ax_sample_prev = self.fig.add_axes([0.3, 0.05, 0.1, 0.075])
+        ax_sample_next = self.fig.add_axes([0.4, 0.05, 0.1, 0.075])
+
+        # Init prev and next buttons
+        button_lead_next = Button(ax_lead_next, "lead >>")
+        button_lead_prev = Button(ax_lead_prev, "lead <<")
+        button_sample_next = Button(ax_sample_next, "sample >>")
+        button_sample_prev = Button(ax_sample_prev, "sample <<")
+
+        # Connect prev and next buttons to callback function
+        button_lead_next.on_clicked(callback.lead_next)
+        button_lead_prev.on_clicked(callback.lead_prev)
+        button_sample_next.on_clicked(callback.sample_next)
+        button_sample_prev.on_clicked(callback.sample_prev)
+
+        plt.show()
+
+mm = MarkUpper(file, "user_session.dat")
+mm.run_markup()
