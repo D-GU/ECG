@@ -54,6 +54,9 @@ class Callback:
             "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
+        self.checkbox_labels = ["P"]
+        self.activated_checkbox = [False]
+
         # self.scatter = self.ax.scatter(
         #     x=0,
         #     y=0,
@@ -79,8 +82,6 @@ class Callback:
         plt.draw()
 
     def lead_prev(self, event):
-        df = pd.DataFrame(self.parameters["P"])
-        print(self.parameters["P"][self.quantity_samples - 1])
         self.lead_id -= 1
         i = self.lead_id % 12
         self.to_plot = self.data[self.sample_id][:, i]
@@ -178,12 +179,15 @@ class Callback:
     def p_peak_markup(self, event):
         self.parameter_id = "P"
 
-    def show_markup(self, event):
-        ...
-
-    def onclick(self, event):
-        self.parameters[self.parameter_id][self.sample_id][self.lead_id].append(event.xdata)
+    def mouse_click(self, event):
+        self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
         self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
+
+    def check_box_click(self, label):
+        self.parameter_id = self.checkbox_labels.index(label)
+
+        for mark in self.parameters[self.parameter_id][self.sample_id][self.lead_id]:
+            self.ax.scatter(x=mark[0], y=mark[1], marker=matplotlib.markers.CARETUPBASE, c="red")
 
 
 class MarkUpper:
@@ -219,7 +223,7 @@ class MarkUpper:
         cursor = Cursor(self.ax, horizOn=False, vertOn=False)
 
         # Connect cursor to specific event
-        cursor.connect_event("button_press_event", callback.onclick)
+        cursor.connect_event("button_press_event", callback.mouse_click)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
