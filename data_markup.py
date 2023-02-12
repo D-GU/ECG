@@ -6,15 +6,15 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from matplotlib.widgets import Button
-from matplotlib.markers import MarkerStyle
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import Cursor
+from matplotlib.widgets import CheckButtons
 
 # If session file is already exists then
 # read the data from it and continue markup it
-if not os.path.isfile("user_session.dat"):
-    with open("user_session.dat", "wb") as session_file:
-        session_file.write(bytearray([0, 0]))
+# if not os.path.isfile("user_session.dat"):
+#     with open("user_session.dat", "wb") as session_file:
+#         session_file.write(bytearray([0, 0]))
 
 file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
@@ -180,6 +180,7 @@ class Callback:
 
     def show_markup(self, event):
         ...
+
     def onclick(self, event):
         self.parameters[self.parameter_id][self.sample_id][self.lead_id].append(event.xdata)
         self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
@@ -211,14 +212,26 @@ class MarkUpper:
         self.ax.plot(sample)
 
     def run_markup(self):
+        # Call callback function class
         callback = Callback(self.data, 21430, 0, 0, self.ax)
 
+        # Init cursor
         cursor = Cursor(self.ax, horizOn=False, vertOn=False)
+
+        # Connect cursor to specific event
         cursor.connect_event("button_press_event", callback.onclick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
         ax_lead_text_box = self.fig.add_axes([0.1, 0.15, 0.03, 0.075])
+
+        # Init text buttons
+        text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
+        text_lead_button = TextBox(ax_lead_text_box, "Lead ID", initial=str(0))
+
+        # Connect text buttons to callback function
+        text_sample_button.on_submit(callback.submit_sample_data)
+        text_lead_button.on_submit(callback.submit_lead_data)
 
         # Init prev and next buttons axes
         ax_lead_prev = self.fig.add_axes([0.1, 0.05, 0.1, 0.075])
@@ -226,25 +239,25 @@ class MarkUpper:
         ax_sample_prev = self.fig.add_axes([0.3, 0.05, 0.1, 0.075])
         ax_sample_next = self.fig.add_axes([0.4, 0.05, 0.1, 0.075])
 
-        # Init text buttons
-        text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
-        text_lead_button = TextBox(ax_lead_text_box, "Lead ID", initial=str(0))
-
         # Init prev and next buttons
         button_lead_next = Button(ax_lead_next, "lead >>")
         button_lead_prev = Button(ax_lead_prev, "lead <<")
         button_sample_next = Button(ax_sample_next, "sample >>")
         button_sample_prev = Button(ax_sample_prev, "sample <<")
 
-        # Connect text buttons to callback function
-        text_sample_button.on_submit(callback.submit_sample_data)
-        text_lead_button.on_submit(callback.submit_lead_data)
-
         # Connect prev and next buttons to callback function
         button_lead_next.on_clicked(callback.lead_next)
         button_lead_prev.on_clicked(callback.lead_prev)
         button_sample_next.on_clicked(callback.sample_next)
         button_sample_prev.on_clicked(callback.sample_prev)
+
+        # Init checkbox button axes and labels
+        ax_checkbox = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
+        labels = ["P"]
+        activated = [False]
+
+        # Init checkbox button
+        checkbox_button = CheckButtons(ax_checkbox, labels, activated)
 
         plt.show()
 
