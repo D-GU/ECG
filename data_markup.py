@@ -1,11 +1,14 @@
 import os
+
+import matplotlib.markers
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from matplotlib.widgets import Button
 from matplotlib.markers import MarkerStyle
 from matplotlib.widgets import TextBox
-
+from matplotlib.widgets import Cursor
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -34,17 +37,35 @@ sample = file[0][:, 0]
 # ax.plot(sample)
 
 
-class Index:
+class Callback:
     def __init__(self, data, quantity_samples, sample_id, lead_id, plot):
         self.ax = plot
         self.data = data
         self.quantity_samples = quantity_samples
         self.lead_id = lead_id
         self.sample_id = sample_id
+        self.parameter_id = "P"
         self.to_plot = data[sample_id][:, lead_id]
 
         self.slider_sample_values = np.array([_ for _ in range(self.quantity_samples)])
         self.slider_lead_values = np.array([_ for _ in range(12)])
+
+        self.parameters = {
+            "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
+        }
+
+        # self.scatter = self.ax.scatter(
+        #     x=0,
+        #     y=0,
+        #     marker=matplotlib.markers.CARETDOWNBASE
+        # )
+        #
+        # self.annotation = self.ax.annotate(
+        #     text='',
+        #     xy=(0, 0),
+        #     xytext=(1, 1)
+        # )
+        # self.annotation.set_visible(False)
 
     def lead_next(self, event):
         self.lead_id += 1
@@ -58,6 +79,8 @@ class Index:
         plt.draw()
 
     def lead_prev(self, event):
+        df = pd.DataFrame(self.parameters["P"])
+        print(self.parameters["P"][self.quantity_samples - 1])
         self.lead_id -= 1
         i = self.lead_id % 12
         self.to_plot = self.data[self.sample_id][:, i]
@@ -152,6 +175,15 @@ class Index:
 
             plt.draw()
 
+    def p_peak_markup(self, event):
+        self.parameter_id = "P"
+
+    def show_markup(self, event):
+        ...
+    def onclick(self, event):
+        self.parameters[self.parameter_id][self.sample_id][self.lead_id].append(event.xdata)
+        self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
+
 
 class MarkUpper:
     def __init__(self, data_path, session_file_path):
@@ -179,19 +211,14 @@ class MarkUpper:
         self.ax.plot(sample)
 
     def run_markup(self):
-        callback = Index(self.data, 21430, 0, 0, self.ax)
+        callback = Callback(self.data, 21430, 0, 0, self.ax)
+
+        cursor = Cursor(self.ax, horizOn=False, vertOn=False)
+        cursor.connect_event("button_press_event", callback.onclick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
         ax_lead_text_box = self.fig.add_axes([0.1, 0.15, 0.03, 0.075])
-
-        # Init text buttons
-        text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
-        text_lead_button = TextBox(ax_lead_text_box, "Lead ID", initial=str(0))
-
-        # Connect text buttons to callback function
-        text_sample_button.on_submit(callback.submit_sample_data)
-        text_lead_button.on_submit(callback.submit_lead_data)
 
         # Init prev and next buttons axes
         ax_lead_prev = self.fig.add_axes([0.1, 0.05, 0.1, 0.075])
@@ -199,11 +226,19 @@ class MarkUpper:
         ax_sample_prev = self.fig.add_axes([0.3, 0.05, 0.1, 0.075])
         ax_sample_next = self.fig.add_axes([0.4, 0.05, 0.1, 0.075])
 
+        # Init text buttons
+        text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
+        text_lead_button = TextBox(ax_lead_text_box, "Lead ID", initial=str(0))
+
         # Init prev and next buttons
         button_lead_next = Button(ax_lead_next, "lead >>")
         button_lead_prev = Button(ax_lead_prev, "lead <<")
         button_sample_next = Button(ax_sample_next, "sample >>")
         button_sample_prev = Button(ax_sample_prev, "sample <<")
+
+        # Connect text buttons to callback function
+        text_sample_button.on_submit(callback.submit_sample_data)
+        text_lead_button.on_submit(callback.submit_lead_data)
 
         # Connect prev and next buttons to callback function
         button_lead_next.on_clicked(callback.lead_next)
@@ -212,6 +247,7 @@ class MarkUpper:
         button_sample_prev.on_clicked(callback.sample_prev)
 
         plt.show()
+
 
 mm = MarkUpper(file, "user_session.dat")
 mm.run_markup()
