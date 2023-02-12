@@ -181,13 +181,17 @@ class Callback:
 
     def mouse_click(self, event):
         self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
-        self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
+        # self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
+        self.ax.plot(event.xdata, event.ydata, marker=matplotlib.markers.CARETUPBASE)
 
     def check_box_click(self, label):
-        self.parameter_id = self.checkbox_labels.index(label)
+        if True:
+            self.parameter_id = self.checkbox_labels.index(label)
 
-        for mark in self.parameters[self.parameter_id][self.sample_id][self.lead_id]:
-            self.ax.scatter(x=mark[0], y=mark[1], marker=matplotlib.markers.CARETUPBASE, c="red")
+
+
+        #for mark in self.parameters[self.parameter_id][self.sample_id][self.lead_id]:
+            #self.ax.scatter(x=mark[0], y=mark[1], marker=matplotlib.markers.CARETUPBASE, c="red")
 
 
 class MarkUpper:
