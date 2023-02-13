@@ -51,7 +51,7 @@ class Callback:
 
         # Dict of parameters to mark
         self.parameters = {
-            "P": [[[(10, 0.2), (100, 0.2), (100, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "P": [[[(10, 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
         self.checkbox_labels = ["P"]  # list of labels for checkbox
@@ -186,12 +186,17 @@ class Callback:
 
             plt.draw()
 
+    def plot_marked_up_data(self):
+        self.ax.scatter(
+            x=self.get_parameter_xdata(),
+            y=self.get_parameter_ydata(),
+            c="red",
+            marker=matplotlib.markers.CARETUPBASE
+        )
+
     def check_box_click(self, label):
         self.parameter_id = label
-
-        x = self.get_parameter_xdata()
-        y = self.get_parameter_ydata()
-
+        self.plot_marked_up_data()
         index = self.checkbox_labels.index(label)
 
 
