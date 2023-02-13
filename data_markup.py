@@ -74,11 +74,11 @@ class Callback:
 
     def get_parameter_ydata(self):
         current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
-        return np.array([data[1] for data in current]) if not np.empty(current) else [0]
+        return np.array([data[1] for data in current])
 
     def get_parameter_xdata(self):
         current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
-        return np.array([data[0] for data in current]) if not np.empty(current) else [0]
+        return np.array([data[0] for data in current])
 
     def lead_next(self, event):
         self.lead_id += 1
@@ -188,7 +188,10 @@ class Callback:
 
     def check_box_click(self, label):
         self.parameter_id = label
-        print(label)
+
+        x = self.get_parameter_xdata()
+        y = self.get_parameter_ydata()
+
         index = self.checkbox_labels.index(label)
 
 
