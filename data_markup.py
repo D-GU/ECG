@@ -39,36 +39,46 @@ sample = file[0][:, 0]
 
 class Callback:
     def __init__(self, data, quantity_samples, sample_id, lead_id, plot):
-        self.ax = plot
-        self.data = data
-        self.quantity_samples = quantity_samples
-        self.lead_id = lead_id
-        self.sample_id = sample_id
-        self.parameter_id = "P"
-        self.to_plot = data[sample_id][:, lead_id]
+        self.ax = plot  # plot itself
+        self.data = data  # data file containing samples to plot
+        self.quantity_samples = quantity_samples  # quantity of samples
+        self.lead_id = lead_id  # current lead id
+        self.sample_id = sample_id  # current sample id
+        self.parameter_id = "P"  # current parameter to mark
 
-        self.slider_sample_values = np.array([_ for _ in range(self.quantity_samples)])
-        self.slider_lead_values = np.array([_ for _ in range(12)])
+        self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
+        self.transparent_color = (1, 1, 0, 0)  # transparent color to hide marked up data
 
+        # Dict of parameters to mark
         self.parameters = {
-            "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "P": [[[(10, 0.2), (100, 0.2), (100, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
-        self.checkbox_labels = ["P"]
-        self.activated_checkbox = [False]
+        self.checkbox_labels = ["P"]  # list of labels for checkbox
+        self.activated_checkbox = [False]  # list of activation in checkbox
 
-        # self.scatter = self.ax.scatter(
-        #     x=0,
-        #     y=0,
-        #     marker=matplotlib.markers.CARETDOWNBASE
-        # )
-        #
-        # self.annotation = self.ax.annotate(
-        #     text='',
-        #     xy=(0, 0),
-        #     xytext=(1, 1)
-        # )
-        # self.annotation.set_visible(False)
+        self.color_list = (
+            "red",
+            "blue",
+            "black",
+            "green",
+            "orange",
+        )
+
+        self.scatter = self.ax.scatter(
+            x=self.get_parameter_xdata(),
+            y=self.get_parameter_ydata(),
+            marker=matplotlib.markers.CARETUPBASE,
+            c=self.transparent_color
+        )
+
+    def get_parameter_ydata(self):
+        current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
+        return np.array([data[1] for data in current]) if not np.empty(current) else [0]
+
+    def get_parameter_xdata(self):
+        current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
+        return np.array([data[0] for data in current]) if not np.empty(current) else [0]
 
     def lead_next(self, event):
         self.lead_id += 1
@@ -176,22 +186,10 @@ class Callback:
 
             plt.draw()
 
-    def p_peak_markup(self, event):
-        self.parameter_id = "P"
-
-    def mouse_click(self, event):
-        self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
-        # self.ax.scatter(x=event.xdata, y=event.ydata, marker=matplotlib.markers.CARETDOWNBASE)
-        self.ax.plot(event.xdata, event.ydata, marker=matplotlib.markers.CARETUPBASE)
-
     def check_box_click(self, label):
-        if True:
-            self.parameter_id = self.checkbox_labels.index(label)
-
-
-
-        #for mark in self.parameters[self.parameter_id][self.sample_id][self.lead_id]:
-            #self.ax.scatter(x=mark[0], y=mark[1], marker=matplotlib.markers.CARETUPBASE, c="red")
+        self.parameter_id = label
+        print(label)
+        index = self.checkbox_labels.index(label)
 
 
 class MarkUpper:
@@ -224,10 +222,10 @@ class MarkUpper:
         callback = Callback(self.data, 21430, 0, 0, self.ax)
 
         # Init cursor
-        cursor = Cursor(self.ax, horizOn=False, vertOn=False)
+        # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
 
         # Connect cursor to specific event
-        cursor.connect_event("button_press_event", callback.mouse_click)
+        # cursor.connect_event("button_press_event", callback.mouse_click)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
@@ -266,7 +264,7 @@ class MarkUpper:
 
         # Init checkbox button
         checkbox_button = CheckButtons(ax_checkbox, labels, activated)
-
+        checkbox_button.on_clicked(callback.check_box_click)
         plt.show()
 
 
