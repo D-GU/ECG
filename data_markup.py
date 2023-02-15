@@ -76,19 +76,29 @@ class Callback:
         )
 
         # Plot chosen parameter as point with specific marker
-        self.scatter = self.ax.scatter(
-            x=self.get_parameter_xdata(),
-            y=self.get_parameter_ydata(),
-            marker="o",
-            c="red",
-            alpha=0
+        scatter_P = self.ax.scatter(
+            x=self.get_parameter_xdata("P"),
+            y=self.get_parameter_ydata("Q"),
+            marker="X",
+            c="red"
         )
 
-    def get_parameter_ydata(self):
+        scatter_Q = self.ax.scatter(
+            x=self.get_parameter_xdata("P"),
+            y=self.get_parameter_ydata("Q"),
+            marker="D",
+            c="blue"
+        )
+
+        self.scatters = np.array([scatter_P, scatter_Q])
+
+    def get_parameter_ydata(self, parameter_id):
+        self.parameter_id = parameter_id
         current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
         return np.array([data[1] for data in current])
 
-    def get_parameter_xdata(self):
+    def get_parameter_xdata(self, parameter_id):
+        self.parameter_id = parameter_id
         current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
         return np.array([data[0] for data in current])
 
@@ -198,29 +208,16 @@ class Callback:
 
             plt.draw()
 
-    def plot_marked_up_data(self, color="red", alpha=1):
-        """
-        Plot (2-D) point on the canvas (not including parameters) (maybe should make another funciton)
-        color: color parameter
-        alpha: transparency coefficient
-        """
-        self.ax.scatter(
-            x=self.get_parameter_xdata(),
-            y=self.get_parameter_ydata(),
-            c=color,
-            marker=matplotlib.markers.CARETUPBASE,
-            alpha=alpha
-        )
+    def get_scatter_update(self, scatter_id):
+        self.scatters[scatter_id].set_offsets([
+            self.get_parameter_xdata(self.checkbox_labels.index(scatter_id)),
+            self.get_parameter_ydata(self.checkbox_labels.index(scatter_id))
+        ])
 
     def check_box_click(self, label):
         self.parameter_id = label
         index = self.checkbox_labels.index(label)
 
-        for indx, value in enumerate(self.checkbox_labels):
-            if indx == index:
-                self.plot_marked_up_data(color=self.color_list[self.checkbox_labels.index(self.parameter_id)])
-            else:
-                self.plot_marked_up_data(alpha=0)
 
 
 
