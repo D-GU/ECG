@@ -111,6 +111,8 @@ class Callback:
         ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
 
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")  # Update xlabel
+
+        # Set updated data
         self.line.set_ydata(self.to_plot)
 
         plt.draw()
@@ -134,7 +136,7 @@ class Callback:
         # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
 
-        # Set ydata of the line
+        # Set updated data
         self.line.set_ydata(self.to_plot)
 
         plt.draw()
@@ -155,7 +157,10 @@ class Callback:
             self.checkbox_labels.index(self.parameter_id)
         ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
 
+        # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+
+        # Set updated data
         self.line.set_ydata(self.to_plot)
 
         plt.draw()
@@ -176,7 +181,10 @@ class Callback:
             self.checkbox_labels.index(self.parameter_id)
         ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
 
+        # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
+
+        # Set updated data
         self.line.set_ydata(self.to_plot)
 
         plt.draw()
