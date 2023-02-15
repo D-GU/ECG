@@ -8,7 +8,7 @@ import pandas as pd
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import Cursor
-from matplotlib.widgets import CheckButtons
+from matplotlib.widgets import RadioButtons
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -51,12 +51,22 @@ class Callback:
 
         # Dict of parameters to mark
         self.parameters = {
-            "P": [[[(10, 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "P": [[[(10, 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "Q": [[[(100, 0.2), (250, 0.5), (340, 0.43)] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
-        self.checkbox_labels = ["P"]  # list of labels for checkbox
-        self.activated_checkbox = [False]  # list of activation in checkbox
+        # Set different markers to each parameter
+        self.markers_box = {
+            "P": matplotlib.markers.CARETUPBASE,
+            "P interval": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "blue"),
+            "Q": "X",
+            "QRS": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "red")
+        }
 
+        self.checkbox_labels = ["P", "Q"]  # list of labels for checkbox
+        self.activated_checkbox = [False, False]  # list of activation in checkbox
+
+        # A list of color to plot
         self.color_list = (
             "red",
             "blue",
@@ -65,11 +75,13 @@ class Callback:
             "orange",
         )
 
+        # Plot chosen parameter as point with specific marker
         self.scatter = self.ax.scatter(
             x=self.get_parameter_xdata(),
             y=self.get_parameter_ydata(),
-            marker=matplotlib.markers.CARETUPBASE,
-            c=self.transparent_color
+            marker="o",
+            c="red",
+            alpha=0
         )
 
     def get_parameter_ydata(self):
@@ -186,18 +198,30 @@ class Callback:
 
             plt.draw()
 
-    def plot_marked_up_data(self):
+    def plot_marked_up_data(self, color="red", alpha=1):
+        """
+        Plot (2-D) point on the canvas (not including parameters) (maybe should make another funciton)
+        color: color parameter
+        alpha: transparency coefficient
+        """
         self.ax.scatter(
             x=self.get_parameter_xdata(),
             y=self.get_parameter_ydata(),
-            c="red",
-            marker=matplotlib.markers.CARETUPBASE
+            c=color,
+            marker=matplotlib.markers.CARETUPBASE,
+            alpha=alpha
         )
 
     def check_box_click(self, label):
         self.parameter_id = label
-        self.plot_marked_up_data()
         index = self.checkbox_labels.index(label)
+
+        for indx, value in enumerate(self.checkbox_labels):
+            if indx == index:
+                self.plot_marked_up_data(color=self.color_list[self.checkbox_labels.index(self.parameter_id)])
+            else:
+                self.plot_marked_up_data(alpha=0)
+
 
 
 class MarkUpper:
@@ -265,14 +289,17 @@ class MarkUpper:
         button_sample_next.on_clicked(callback.sample_next)
         button_sample_prev.on_clicked(callback.sample_prev)
 
-        # Init checkbox button axes and labels
-        ax_checkbox = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
-        labels = ["P"]
-        activated = [False]
+        # Init radio button axes and labels
+        ax_radio = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
+        labels = ["P", "Q"]
+        activated = [False, False]
 
-        # Init checkbox button
-        checkbox_button = CheckButtons(ax_checkbox, labels, activated)
-        checkbox_button.on_clicked(callback.check_box_click)
+        # Init radio button
+        radio_button = RadioButtons(ax_radio, labels, activated)
+
+        # Connect radio button to callback function
+        radio_button.on_clicked(callback.check_box_click)
+
         plt.show()
 
 
