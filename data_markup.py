@@ -3,11 +3,9 @@ import os
 import matplotlib.markers
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
-from matplotlib.widgets import Cursor
 from matplotlib.widgets import RadioButtons
 
 # If session file is already exists then
@@ -38,7 +36,8 @@ sample = file[0][:, 0]
 
 
 class Callback:
-    def __init__(self, data, quantity_samples, sample_id, lead_id, plot):
+    def __init__(self, data, quantity_samples, sample_id, lead_id, plot, fig):
+        self.fig = fig
         self.ax = plot  # plot itself
         self.data = data  # data file containing samples to plot
         self.quantity_samples = quantity_samples  # quantity of samples
@@ -51,7 +50,8 @@ class Callback:
 
         # Dict of parameters to mark
         self.parameters = {
-            "P": [[[(10, 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "P": [[[(np.random.randint(12, 189), 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in
+                  range(self.quantity_samples)],
             "Q": [[[(100, 0.2), (250, 0.5), (340, 0.43)] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
@@ -76,30 +76,36 @@ class Callback:
         )
 
         # Plot chosen parameter as point with specific marker
-        scatter_P = self.ax.scatter(
+        scatter_p = plt.scatter(
             x=self.get_parameter_xdata("P"),
-            y=self.get_parameter_ydata("Q"),
+            y=self.get_parameter_ydata("P"),
             marker="X",
-            c="red"
+            c="red",
         )
 
-        scatter_Q = self.ax.scatter(
-            x=self.get_parameter_xdata("P"),
+        scatter_q = plt.scatter(
+            x=self.get_parameter_xdata("Q"),
             y=self.get_parameter_ydata("Q"),
             marker="D",
-            c="blue"
+            c="blue",
         )
 
-        self.scatters = np.array([scatter_P, scatter_Q])
+        self.scatters = np.array([scatter_p, scatter_q])
+
+        for scatter in self.scatters:
+            scatter.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
-        self.parameter_id = parameter_id
-        current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
+        sample_id = self.sample_id
+        lead_id = self.lead_id
+        current = np.array(self.parameters[parameter_id][sample_id][lead_id])
+
         return np.array([data[1] for data in current])
 
     def get_parameter_xdata(self, parameter_id):
-        self.parameter_id = parameter_id
-        current = np.array(self.parameters[self.parameter_id][self.sample_id][self.lead_id])
+        sample_id = self.sample_id
+        lead_id = self.lead_id
+        current = np.array(self.parameters[parameter_id][sample_id][lead_id])
         return np.array([data[0] for data in current])
 
     def lead_next(self, event):
@@ -209,16 +215,23 @@ class Callback:
             plt.draw()
 
     def get_scatter_update(self, scatter_id):
-        self.scatters[scatter_id].set_offsets([
-            self.get_parameter_xdata(self.checkbox_labels.index(scatter_id)),
-            self.get_parameter_ydata(self.checkbox_labels.index(scatter_id))
-        ])
+        self.scatters[scatter_id].set_offsets(
+            [self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
+             self.get_parameter_ydata(self.checkbox_labels[scatter_id])]
+        )
 
     def check_box_click(self, label):
         self.parameter_id = label
         index = self.checkbox_labels.index(label)
 
+        for indx, value in enumerate(self.parameters):
+            if indx == index:
+                self.get_scatter_update(index)
+                self.scatters[indx].set_visible(True)
+            else:
+                self.scatters[indx].set_visible(False)
 
+        plt.draw()
 
 
 class MarkUpper:
@@ -248,7 +261,7 @@ class MarkUpper:
 
     def run_markup(self):
         # Call callback function class
-        callback = Callback(self.data, 21430, 0, 0, self.ax)
+        callback = Callback(self.data, 21430, 0, 0, self.ax, self.fig)
 
         # Init cursor
         # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
