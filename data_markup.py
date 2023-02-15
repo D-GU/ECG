@@ -113,6 +113,9 @@ class Callback:
         i = self.lead_id % 12
         self.to_plot = self.data[self.sample_id][:, i]
 
+        self.get_scatter_update(self.parameter_id)
+        self.scatters[self.parameter_id].set_visible(self.activated_checkbox[self.parameter_id])
+
         self.ax.clear()
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
         self.ax.plot(self.to_plot)
@@ -124,9 +127,13 @@ class Callback:
         i = self.lead_id % 12
         self.to_plot = self.data[self.sample_id][:, i]
 
+        self.get_scatter_update(self.parameter_id)
+        self.scatters[self.parameter_id].set_visible(self.activated_checkbox[self.parameter_id])
+
         self.ax.clear()
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
         self.ax.plot(self.to_plot)
+
 
         plt.draw()
 
@@ -215,6 +222,8 @@ class Callback:
             plt.draw()
 
     def get_scatter_update(self, scatter_id):
+        self.sample_id = self.sample_id
+        self.lead_id = self.lead_id
         self.scatters[scatter_id].set_offsets(
             [self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
              self.get_parameter_ydata(self.checkbox_labels[scatter_id])]
@@ -228,8 +237,10 @@ class Callback:
             if indx == index:
                 self.get_scatter_update(index)
                 self.scatters[indx].set_visible(True)
+                self.activated_checkbox[indx] = True
             else:
                 self.scatters[indx].set_visible(False)
+                self.activated_checkbox[indx] = False
 
         plt.draw()
 
