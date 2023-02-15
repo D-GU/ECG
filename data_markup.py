@@ -18,23 +18,6 @@ file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
 
 
-# fig, ax = plt.subplots()
-
-# Get figure manager
-# fig_manager = plt.get_current_fig_manager()
-
-# Put the figure on full screen mode
-# fig_manager.full_screen_toggle()
-
-# Adjust the subplots to make it wider
-# plt.subplots_adjust(
-#     left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
-# )
-
-# ax.set_xlabel("0 / 21429\n0 / 11")
-# ax.plot(sample)
-
-
 class Callback:
     def __init__(self, data, quantity_samples, sample_id, lead_id, plot, fig, line):
         self.fig = fig  # A figure
@@ -90,18 +73,22 @@ class Callback:
             c="blue",
         )
 
+        # Scatters array
         self.scatters = np.array([scatter_p, scatter_q])
 
+        # Make every scatter in array invisible
         for scatter in self.scatters:
             scatter.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
+        # Collect current x data of given parameter
         current = np.array(
             self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
         )
         return np.array([data[1] for data in current])
 
     def get_parameter_xdata(self, parameter_id):
+        # Collect current y data of given parameter
         current = np.array(
             self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
         )
@@ -129,10 +116,9 @@ class Callback:
         plt.draw()
 
     def lead_prev(self, event):
-        plt.ion()
-        self.lead_id -= 1
-        i = self.lead_id % 12
-        self.to_plot = self.data[self.sample_id][:, i]
+        self.lead_id -= 1  # Decrement lead_id
+        i = self.lead_id % 12  # Make sure lead id stays within the ring
+        self.to_plot = self.data[self.sample_id][:, i]  # Current data to plot
 
         # Update scatter parameters to plot
         self.get_scatter_update(
@@ -145,7 +131,10 @@ class Callback:
             self.checkbox_labels.index(self.parameter_id)
         ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
 
+        # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
+
+        # Set ydata of the line
         self.line.set_ydata(self.to_plot)
 
         plt.draw()
@@ -271,10 +260,11 @@ class Callback:
             plt.draw()
 
     def get_scatter_update(self, scatter_id):
-        self.scatters[scatter_id].set_offsets(
-            [self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
-             self.get_parameter_ydata(self.checkbox_labels[scatter_id])]
-        )
+        updated_data = np.c_[
+            self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
+            self.get_parameter_ydata(self.checkbox_labels[scatter_id])
+        ]
+        self.scatters[scatter_id].set_offsets(updated_data)
 
     def check_box_click(self, label):
         self.parameter_id = label
@@ -311,7 +301,7 @@ class MarkUpper:
 
         # Adjust the subplots to make it wider
         plt.subplots_adjust(
-            left=0.001, bottom=0.298, right=1, top=0.9, wspace=0.2, hspace=0.2
+            left=0.001, bottom=0.298, right=1, top=0.9, wspace=0.2, hspace=0.9
         )
 
         self.ax.set_xlabel("0 / 21429\n0 / 11")
