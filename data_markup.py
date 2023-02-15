@@ -36,8 +36,9 @@ sample = file[0][:, 0]
 
 
 class Callback:
-    def __init__(self, data, quantity_samples, sample_id, lead_id, plot, fig):
-        self.fig = fig
+    def __init__(self, data, quantity_samples, sample_id, lead_id, plot, fig, line):
+        self.fig = fig  # A figure
+        self.line = line  # Line
         self.ax = plot  # plot itself
         self.data = data  # data file containing samples to plot
         self.quantity_samples = quantity_samples  # quantity of samples
@@ -46,7 +47,6 @@ class Callback:
         self.parameter_id = "P"  # current parameter to mark
 
         self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
-        self.transparent_color = (1, 1, 0, 0)  # transparent color to hide marked up data
 
         # Dict of parameters to mark
         self.parameters = {
@@ -96,44 +96,57 @@ class Callback:
             scatter.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
-        sample_id = self.sample_id
-        lead_id = self.lead_id
-        current = np.array(self.parameters[parameter_id][sample_id][lead_id])
-
+        current = np.array(
+            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+        )
         return np.array([data[1] for data in current])
 
     def get_parameter_xdata(self, parameter_id):
-        sample_id = self.sample_id
-        lead_id = self.lead_id
-        current = np.array(self.parameters[parameter_id][sample_id][lead_id])
+        current = np.array(
+            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+        )
         return np.array([data[0] for data in current])
 
     def lead_next(self, event):
-        self.lead_id += 1
-        i = self.lead_id % 12
-        self.to_plot = self.data[self.sample_id][:, i]
+        self.lead_id += 1  # Increment lead id
+        i = self.lead_id % 12  # Make sure that lead id stays within the ring
+        self.to_plot = self.data[self.sample_id][:, i]  # Update data to plot
 
-        self.get_scatter_update(self.parameter_id)
-        self.scatters[self.parameter_id].set_visible(self.activated_checkbox[self.parameter_id])
+        # Update scatter parameters to plot
+        self.get_scatter_update(
+            self.checkbox_labels.index(self.parameter_id)
+        )
 
-        self.ax.clear()
-        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
-        self.ax.plot(self.to_plot)
+        # If scatters visibility is on -> set_visible(True)
+        # else set_visible(False)
+        self.scatters[
+            self.checkbox_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
+        self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")  # Update xlabel
+        self.line.set_ydata(self.to_plot)
 
         plt.draw()
 
     def lead_prev(self, event):
+        plt.ion()
         self.lead_id -= 1
         i = self.lead_id % 12
         self.to_plot = self.data[self.sample_id][:, i]
 
-        self.get_scatter_update(self.parameter_id)
-        self.scatters[self.parameter_id].set_visible(self.activated_checkbox[self.parameter_id])
+        # Update scatter parameters to plot
+        self.get_scatter_update(
+            self.checkbox_labels.index(self.parameter_id)
+        )
 
-        self.ax.clear()
+        # If scatters visibility is on -> set_visible(True)
+        # else set_visible(False)
+        self.scatters[
+            self.checkbox_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
-        self.ax.plot(self.to_plot)
-
+        self.line.set_ydata(self.to_plot)
 
         plt.draw()
 
@@ -142,9 +155,19 @@ class Callback:
         i = self.sample_id % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
 
-        self.ax.clear()
+        # Update scatter parameters to plot
+        self.get_scatter_update(
+            self.checkbox_labels.index(self.parameter_id)
+        )
+
+        # If scatters visibility is on -> set_visible(True)
+        # else set_visible(False)
+        self.scatters[
+            self.checkbox_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
-        self.ax.plot(self.to_plot)
+        self.line.set_ydata(self.to_plot)
 
         plt.draw()
 
@@ -153,9 +176,19 @@ class Callback:
         i = self.sample_id % self.quantity_samples
         self.to_plot = self.data[i][:, 0]
 
-        self.ax.clear()
+        # Update scatter parameters to plot
+        self.get_scatter_update(
+            self.checkbox_labels.index(self.parameter_id)
+        )
+
+        # If scatters visibility is on -> set_visible(True)
+        # else set_visible(False)
+        self.scatters[
+            self.checkbox_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
-        self.ax.plot(self.to_plot)
+        self.line.set_ydata(self.to_plot)
 
         plt.draw()
 
@@ -164,9 +197,8 @@ class Callback:
             self.sample_id = self.sample_id
             self.to_plot = self.data[self.sample_id][:, 0]
 
-            self.ax.clear()
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
@@ -174,9 +206,8 @@ class Callback:
             self.sample_id = self.sample_id
             self.to_plot = self.data[self.sample_id][:, 0]
 
-            self.ax.clear()
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
@@ -184,9 +215,19 @@ class Callback:
             self.sample_id = int(text)
             self.to_plot = self.data[self.sample_id][:, 0]
 
-            self.ax.clear()
+            # Update scatter parameters to plot
+            self.get_scatter_update(
+                self.checkbox_labels.index(self.parameter_id)
+            )
+
+            # If scatters visibility is on -> set_visible(True)
+            # else set_visible(False)
+            self.scatters[
+                self.checkbox_labels.index(self.parameter_id)
+            ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
@@ -195,9 +236,8 @@ class Callback:
             self.lead_id = self.lead_id
             self.to_plot = self.data[self.sample_id][:, self.lead_id]
 
-            self.ax.clear()
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
@@ -205,9 +245,8 @@ class Callback:
             self.lead_id = self.lead_id
             self.to_plot = self.data[self.sample_id][:, self.lead_id]
 
-            self.ax.clear()
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
@@ -215,15 +254,23 @@ class Callback:
             self.lead_id = int(text)
             self.to_plot = self.data[self.sample_id][:, self.lead_id]
 
-            self.ax.clear()
+            # Update scatter parameters to plot
+            self.get_scatter_update(
+                self.checkbox_labels.index(self.parameter_id)
+            )
+
+            # If scatters visibility is on -> set_visible(True)
+            # else set_visible(False)
+            self.scatters[
+                self.checkbox_labels.index(self.parameter_id)
+            ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
-            self.ax.plot(self.to_plot)
+            self.line.set_ydata(self.to_plot)
 
             plt.draw()
 
     def get_scatter_update(self, scatter_id):
-        self.sample_id = self.sample_id
-        self.lead_id = self.lead_id
         self.scatters[scatter_id].set_offsets(
             [self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
              self.get_parameter_ydata(self.checkbox_labels[scatter_id])]
@@ -264,15 +311,15 @@ class MarkUpper:
 
         # Adjust the subplots to make it wider
         plt.subplots_adjust(
-            left=0.002, bottom=0.298, right=1, top=0.693, wspace=0.2, hspace=0.2
+            left=0.001, bottom=0.298, right=1, top=0.9, wspace=0.2, hspace=0.2
         )
 
         self.ax.set_xlabel("0 / 21429\n0 / 11")
-        self.ax.plot(sample)
+        self.line, = self.ax.plot(sample)
 
     def run_markup(self):
         # Call callback function class
-        callback = Callback(self.data, 21430, 0, 0, self.ax, self.fig)
+        callback = Callback(self.data, 21430, 0, 0, self.ax, self.fig, self.line)
 
         # Init cursor
         # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
