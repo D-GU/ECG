@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
+from matplotlib.widgets import Cursor
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -33,9 +34,9 @@ class Callback:
 
         # Dict of parameters to mark
         self.parameters = {
-            "P": [[[(np.random.randint(12, 189), 0.2), (100, 0.2), (1000, 0.2)] for _ in range(12)] for _ in
+            "P": [[[] for _ in range(12)] for _ in
                   range(self.quantity_samples)],
-            "Q": [[[(100, 0.2), (250, 0.5), (340, 0.43)] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
         # Set different markers to each parameter
@@ -289,6 +290,14 @@ class Callback:
 
         plt.draw()
 
+    def onclick(self, event):
+        eps = 0.01
+
+        self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
+        self.get_scatter_update(self.checkbox_labels.index(self.parameter_id))
+
+        plt.draw()
+
 
 class MarkUpper:
     def __init__(self, data_path, session_file_path):
@@ -312,7 +321,12 @@ class MarkUpper:
             left=0.001, bottom=0.298, right=1, top=0.9, wspace=0.2, hspace=0.9
         )
 
+        # Set xlabel
         self.ax.set_xlabel("0 / 21429\n0 / 11")
+
+        self.ax.set_xlim(-5, self.data.shape[1] + 10)
+        self.ax.set_ylim(-0.5, 1)
+
         self.line, = self.ax.plot(sample)
 
     def run_markup(self):
@@ -323,7 +337,8 @@ class MarkUpper:
         # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
 
         # Connect cursor to specific event
-        # cursor.connect_event("button_press_event", callback.mouse_click)
+        # cursor.connect_event("button_press_event", callback.on_mouse_click)
+        self.fig.canvas.mpl_connect("axes_enter_event", callback.onclick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
