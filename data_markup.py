@@ -47,7 +47,7 @@ class Callback:
             "QRS": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "red")
         }
 
-        self.checkbox_labels = ["P", "Q"]  # list of labels for checkbox
+        self.radio_labels = ["P", "Q"]  # list of labels for checkbox
         self.activated_checkbox = [False, False]  # list of activation in checkbox
 
         # A list of color to plot
@@ -81,8 +81,6 @@ class Callback:
         for scatter in self.scatters:
             scatter.set_visible(False)
 
-        # self.cid = self.line.figure.canvas.mpl_connect("button_press_event", self)
-
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
         current = np.array(
@@ -104,14 +102,14 @@ class Callback:
 
         # Update scatter parameters to plot
         self.get_scatter_update(
-            self.checkbox_labels.index(self.parameter_id)
+            self.radio_labels.index(self.parameter_id)
         )
 
         # If scatters visibility is on -> set_visible(True)
         # else set_visible(False)
         self.scatters[
-            self.checkbox_labels.index(self.parameter_id)
-        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+            self.radio_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")  # Update xlabel
 
@@ -127,14 +125,14 @@ class Callback:
 
         # Update scatter parameters to plot
         self.get_scatter_update(
-            self.checkbox_labels.index(self.parameter_id)
+            self.radio_labels.index(self.parameter_id)
         )
 
         # If scatters visibility is on -> set_visible(True)
         # else set_visible(False)
         self.scatters[
-            self.checkbox_labels.index(self.parameter_id)
-        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+            self.radio_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
         # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{i % 12} / 11")
@@ -151,14 +149,14 @@ class Callback:
 
         # Update scatter parameters to plot
         self.get_scatter_update(
-            self.checkbox_labels.index(self.parameter_id)
+            self.radio_labels.index(self.parameter_id)
         )
 
         # If scatters visibility is on -> set_visible(True)
         # else set_visible(False)
         self.scatters[
-            self.checkbox_labels.index(self.parameter_id)
-        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+            self.radio_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
         # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
@@ -175,14 +173,14 @@ class Callback:
 
         # Update scatter parameters to plot
         self.get_scatter_update(
-            self.checkbox_labels.index(self.parameter_id)
+            self.radio_labels.index(self.parameter_id)
         )
 
         # If scatters visibility is on -> set_visible(True)
         # else set_visible(False)
         self.scatters[
-            self.checkbox_labels.index(self.parameter_id)
-        ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+            self.radio_labels.index(self.parameter_id)
+        ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
         # Update xlabel
         self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
@@ -217,14 +215,14 @@ class Callback:
 
             # Update scatter parameters to plot
             self.get_scatter_update(
-                self.checkbox_labels.index(self.parameter_id)
+                self.radio_labels.index(self.parameter_id)
             )
 
             # If scatters visibility is on -> set_visible(True)
             # else set_visible(False)
             self.scatters[
-                self.checkbox_labels.index(self.parameter_id)
-            ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+                self.radio_labels.index(self.parameter_id)
+            ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
             self.line.set_ydata(self.to_plot)
@@ -256,14 +254,14 @@ class Callback:
 
             # Update scatter parameters to plot
             self.get_scatter_update(
-                self.checkbox_labels.index(self.parameter_id)
+                self.radio_labels.index(self.parameter_id)
             )
 
             # If scatters visibility is on -> set_visible(True)
             # else set_visible(False)
             self.scatters[
-                self.checkbox_labels.index(self.parameter_id)
-            ].set_visible(self.activated_checkbox[self.checkbox_labels.index(self.parameter_id)])
+                self.radio_labels.index(self.parameter_id)
+            ].set_visible(self.activated_checkbox[self.radio_labels.index(self.parameter_id)])
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
             self.line.set_ydata(self.to_plot)
@@ -272,23 +270,23 @@ class Callback:
 
     def get_scatter_update(self, scatter_id):
         updated_data = np.c_[
-            self.get_parameter_xdata(self.checkbox_labels[scatter_id]),
-            self.get_parameter_ydata(self.checkbox_labels[scatter_id])
+            self.get_parameter_xdata(self.radio_labels[scatter_id]),
+            self.get_parameter_ydata(self.radio_labels[scatter_id])
         ]
         self.scatters[scatter_id].set_offsets(updated_data)
 
-    def check_box_click(self, label):
+    def radio_click(self, label):
         self.parameter_id = label
-        index = self.checkbox_labels.index(label)
+        index = self.radio_labels.index(label)
 
         for indx, value in enumerate(self.parameters):
             if indx == index:
-                self.get_scatter_update(index)
-                self.scatters[indx].set_visible(True)
-                self.activated_checkbox[indx] = True
+                self.get_scatter_update(index)  # update scatter
+                self.scatters[indx].set_visible(True)  # set it visible
+                self.activated_checkbox[indx] = True  # set visibility parameter to True
             else:
-                self.scatters[indx].set_visible(False)
-                self.activated_checkbox[indx] = False
+                self.scatters[indx].set_visible(False)  # set current parameter to False
+                self.activated_checkbox[indx] = False  # set visibility parameter to False
 
         plt.draw()
 
@@ -297,9 +295,12 @@ class Callback:
 
         if event.inaxes == self.line.axes:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
-            self.get_scatter_update(self.checkbox_labels.index(self.parameter_id))
+            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
         plt.draw()
+
+    def onenter(self, event):
+        ...
 
 
 class MarkUpper:
@@ -327,8 +328,8 @@ class MarkUpper:
         # Set xlabel
         self.ax.set_xlabel("0 / 21429\n0 / 11")
 
-        self.ax.set_xlim(-5, self.data.shape[1] + 10)
-        self.ax.set_ylim(-0.5, 1)
+        self.ax.set_xlim(-5, self.data.shape[1] + 10)  # Set x limits
+        self.ax.set_ylim(-0.5, 1)  # Set y limits
 
         self.line, = self.ax.plot(sample)
 
@@ -381,7 +382,7 @@ class MarkUpper:
         radio_button = RadioButtons(ax_radio, labels, activated)
 
         # Connect radio button to callback function
-        radio_button.on_clicked(callback.check_box_click)
+        radio_button.on_clicked(callback.radio_click)
 
         plt.show()
 
