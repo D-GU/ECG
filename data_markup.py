@@ -81,6 +81,8 @@ class Callback:
         for scatter in self.scatters:
             scatter.set_visible(False)
 
+        self.cid = self.line.figure.canvas.mpl_connect("button_press_event", self)
+
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
         current = np.array(
@@ -290,8 +292,11 @@ class Callback:
 
         plt.draw()
 
-    def onclick(self, event):
+    def __call__(self, event):
         eps = 0.01
+
+        if event.inaxes == self.line.axes:
+            print(2)
 
         self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
         self.get_scatter_update(self.checkbox_labels.index(self.parameter_id))
@@ -338,7 +343,6 @@ class MarkUpper:
 
         # Connect cursor to specific event
         # cursor.connect_event("button_press_event", callback.on_mouse_click)
-        self.fig.canvas.mpl_connect("axes_enter_event", callback.onclick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
