@@ -65,6 +65,8 @@ class Callback:
             y=self.get_parameter_ydata("P"),
             marker="X",
             c="red",
+            picker=True,
+            pickradius=5
         )
 
         scatter_q = plt.scatter(
@@ -72,6 +74,8 @@ class Callback:
             y=self.get_parameter_ydata("Q"),
             marker="D",
             c="blue",
+            picker=True,
+            pickradius=5
         )
 
         # Scatters array
@@ -291,16 +295,23 @@ class Callback:
         plt.draw()
 
     def onclick(self, event):
-        eps = 0.01
-
         if event.inaxes == self.line.axes:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
         plt.draw()
 
-    def onenter(self, event):
-        ...
+    def onpick(self, event):
+        thisline = event.artist
+        ind = event.ind[0]
+
+        if event.artist == any(self.parameters[self.parameter_id][self.sample_id][self.lead_id]):
+            x = event.xdata
+            y = event.ydata
+
+            self.parameters[self.parameter_id][self.sample_id][self.lead_id].remove(x, y)
+            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+            plt.draw()
 
 
 class MarkUpper:
@@ -338,10 +349,11 @@ class MarkUpper:
         callback = Callback(self.data, 21430, 0, 0, self.ax, self.fig, self.line)
 
         # Init cursor
-        cursor = Cursor(self.ax, horizOn=False, vertOn=False)
+        # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
 
         # Connect cursor to specific event
-        cursor.connect_event("button_press_event", callback.onclick)
+        self.fig.canvas.mpl_connect("button_press_event", callback.onclick)
+        self.fig.canvas.mpl_connect("pick_event", callback.onpick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
