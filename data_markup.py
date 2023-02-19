@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
+from matplotlib.backend_bases import MouseButton
 from matplotlib.widgets import Cursor
 
 # If session file is already exists then
@@ -295,23 +296,26 @@ class Callback:
         plt.draw()
 
     def onclick(self, event):
-        if event.inaxes == self.line.axes:
+        if event.inaxes == self.line.axes and event.button is MouseButton.LEFT:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
+        if event.inaxes == self.line.axes and event.button is MouseButton.RIGHT:
+            print("pog")
         plt.draw()
 
     def onpick(self, event):
         thisline = event.artist
         ind = event.ind[0]
 
-        if event.artist == any(self.parameters[self.parameter_id][self.sample_id][self.lead_id]):
-            x = event.xdata
-            y = event.ydata
-
-            self.parameters[self.parameter_id][self.sample_id][self.lead_id].remove(x, y)
-            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
-            plt.draw()
+        if event.button is MouseButton.RIGHT:
+            if event.artist == any(self.parameters[self.parameter_id][self.sample_id][self.lead_id]):
+                x = event.xdata
+                y = event.ydata
+                print(x, y)
+                self.parameters[self.parameter_id][self.sample_id][self.lead_id].remove(x, y)
+                self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+                plt.draw()
 
 
 class MarkUpper:
