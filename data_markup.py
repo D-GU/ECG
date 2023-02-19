@@ -8,7 +8,6 @@ from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
 from matplotlib.backend_bases import MouseButton
-from matplotlib.widgets import Cursor
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -307,6 +306,7 @@ class Callback:
             ind = event.ind[0]
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+
         plt.draw()
 
 
