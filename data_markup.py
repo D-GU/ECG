@@ -295,6 +295,7 @@ class Callback:
         plt.draw()
 
     def onclick(self, event):
+        # if event is left mouse button press and the clicked point within the subplot
         if event.inaxes == self.line.axes and event.button is MouseButton.LEFT:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
