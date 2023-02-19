@@ -300,22 +300,14 @@ class Callback:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
-        if event.inaxes == self.line.axes and event.button is MouseButton.RIGHT:
-            print("pog")
         plt.draw()
 
     def onpick(self, event):
-        thisline = event.artist
-        ind = event.ind[0]
-
-        if event.button is MouseButton.RIGHT:
-            if event.artist == any(self.parameters[self.parameter_id][self.sample_id][self.lead_id]):
-                x = event.xdata
-                y = event.ydata
-                print(x, y)
-                self.parameters[self.parameter_id][self.sample_id][self.lead_id].remove(x, y)
-                self.get_scatter_update(self.radio_labels.index(self.parameter_id))
-                plt.draw()
+        if event.mouseevent.button == 3:
+            ind = event.ind[0]
+            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
+            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+        plt.draw()
 
 
 class MarkUpper:
