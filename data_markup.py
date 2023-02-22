@@ -30,12 +30,19 @@ class Callback:
         self.sample_id = sample_id  # current sample id
         self.parameter_id = "P"  # current parameter to mark
 
+        self.current_x = None  # Current x data of pressed event
+        self.current_y = None  # Current y data of pressed event
+        self.pressed = False  # State if button been pressed
+
         self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
+
+        self.press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
+        self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
+        self.release = self.fig.canvas.mpl_connect("button_release_event", self.onrelease)
 
         # Dict of parameters to mark
         self.parameters = {
-            "P": [[[] for _ in range(12)] for _ in
-                  range(self.quantity_samples)],
+            "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
             "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
@@ -60,6 +67,7 @@ class Callback:
         )
 
         # Plot chosen parameter as point with specific marker
+        # Scatter of P amplitude parameter
         scatter_p = plt.scatter(
             x=self.get_parameter_xdata("P"),
             y=self.get_parameter_ydata("P"),
@@ -69,6 +77,7 @@ class Callback:
             pickradius=5
         )
 
+        # Scatter of Q amplitude parameter
         scatter_q = plt.scatter(
             x=self.get_parameter_xdata("Q"),
             y=self.get_parameter_ydata("Q"),
@@ -295,14 +304,43 @@ class Callback:
         plt.draw()
 
     def onclick(self, event):
+        self.pressed = True  # Change current pressed state to True (button been pressed)
+
         # if event is left mouse button press and the clicked point within the subplot
         if event.inaxes == self.line.axes and event.button is MouseButton.LEFT:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
+        if event.inaxes == self.line.axes and event.button is MouseButton.MIDDLE:
+            self.current_x = event.xdata
+            self.current_y = event.ydata
+
         plt.draw()
 
+    def onrelease(self, event):
+        self.pressed = False
+        if event.button is MouseButton.MIDDLE:
+            self.pressed = False
+            x = event.xdata
+            y = event.ydata
+
+            self.ax.plot(
+                self.current_x,
+                self.current_y,
+                x,
+                y,
+                marker="x",
+                linestyle='dashed',
+                linewidth=2,
+                color="red",
+                picker=True,
+                pickradius=5
+            )
+
+            plt.draw()
+
     def onpick(self, event):
+        print(event.ind[0])
         if event.mouseevent.button == 3:
             ind = event.ind[0]
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
@@ -349,8 +387,6 @@ class MarkUpper:
         # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
 
         # Connect cursor to specific event
-        self.fig.canvas.mpl_connect("button_press_event", callback.onclick)
-        self.fig.canvas.mpl_connect("pick_event", callback.onpick)
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
