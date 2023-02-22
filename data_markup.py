@@ -43,7 +43,8 @@ class Callback:
         # Dict of parameters to mark
         self.parameters = {
             "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "P_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
         }
 
         # Set different markers to each parameter
@@ -54,8 +55,8 @@ class Callback:
             "QRS": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "red")
         }
 
-        self.radio_labels = ["P", "Q"]  # list of labels for checkbox
-        self.activated_checkbox = [False, False]  # list of activation in checkbox
+        self.radio_labels = ["P", "Q", "P_Int"]  # list of labels for checkbox
+        self.activated_checkbox = [False, False, False]  # list of activation in checkbox
 
         # A list of color to plot
         self.color_list = (
@@ -90,9 +91,30 @@ class Callback:
         # Scatters array
         self.scatters = np.array([scatter_p, scatter_q])
 
-        # Make every scatter in array invisible
-        for scatter in self.scatters:
+        self.line_int_p = self.ax.plot(
+            (0, 0),
+            (0, 0),
+            marker="x",
+            color="green",
+            picker=True,
+            pickradius=5
+        )
+
+        self.line_int_q = self.ax.plot(
+            (0, 0),
+            (0, 0),
+            marker="x",
+            color="purple",
+            picker=True,
+            pickradius=5
+        )
+
+        self.intervals = np.array([self.line_int_p, self.line_int_q])
+
+        # Make every scatter and bound in array invisible
+        for scatter, interval in zip(self.scatters, self.intervals):
             scatter.set_visible(False)
+            interval.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
@@ -107,6 +129,16 @@ class Callback:
             self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
         )
         return np.array([data[0] for data in current])
+
+    def get_line_x_data(self, parameter_id):
+        current = self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+        cur_x = current[0][::]
+        return np.array(cur_x)
+
+    def get_line_y_data(self, parameter_id):
+        current = self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+        cur_y = current[1][::]
+        return np.array(cur_y)
 
     def lead_next(self, event):
         self.lead_id += 1  # Increment lead id
@@ -281,6 +313,14 @@ class Callback:
 
             plt.draw()
 
+    def get_line_update(self, line_id):
+        cur_x = self.get_line_x_data(line_id)
+        cur_y = self.get_line_y_data(line_id)
+
+        # Update boundaries dataß
+        # self.bounds[line_id].ydata = (cur_x), (cur_y)
+        ...
+
     def get_scatter_update(self, scatter_id):
         updated_data = np.c_[
             self.get_parameter_xdata(self.radio_labels[scatter_id]),
@@ -291,6 +331,10 @@ class Callback:
     def radio_click(self, label):
         self.parameter_id = label
         index = self.radio_labels.index(label)
+
+        # if interval in token(label)
+        # for loop for boundaries
+        # else for loop for scatters
 
         for indx, value in enumerate(self.parameters):
             if indx == index:
@@ -420,8 +464,8 @@ class MarkUpper:
 
         # Init radio button axes and labels
         ax_radio = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
-        labels = ["P", "Q"]
-        activated = [False, False]
+        labels = ["P", "Q", "P_Int"]
+        activated = [False, False, False]
 
         # Init radio button
         radio_button = RadioButtons(ax_radio, labels, activated)
