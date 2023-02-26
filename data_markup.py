@@ -100,21 +100,21 @@ class Callback:
             pickradius=5
         )
 
-        self.line_int_q = self.ax.plot(
-            (0, 0),
-            (0, 0),
-            marker="x",
-            color="purple",
-            picker=True,
-            pickradius=5
-        )
+        # self.line_int_q = self.ax.plot(
+        #     (0, 0),
+        #     (0, 0),
+        #     marker="x",
+        #     color="purple",
+        #     picker=True,
+        #     pickradius=5
+        # )
 
-        self.intervals = np.array([self.line_int_p, self.line_int_q])
+        # self.intervals = np.array([self.line_int_p])
 
         # Make every scatter and bound in array invisible
-        for scatter, interval in zip(self.scatters, self.intervals):
+        for scatter in self.scatters:
             scatter.set_visible(False)
-            interval.set_visible(False)
+            # interval.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
@@ -133,6 +133,7 @@ class Callback:
     def get_line_x_data(self, parameter_id):
         current = self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
         cur_x = current[0][::]
+        print(cur_x.shape)
         return np.array(cur_x)
 
     def get_line_y_data(self, parameter_id):
@@ -335,15 +336,22 @@ class Callback:
         # if interval in token(label)
         # for loop for boundaries
         # else for loop for scatters
+        parsed_word = label.split("_")
 
-        for indx, value in enumerate(self.parameters):
-            if indx == index:
-                self.get_scatter_update(index)  # update scatter
-                self.scatters[indx].set_visible(True)  # set it visible
-                self.activated_checkbox[indx] = True  # set visibility parameter to True
-            else:
-                self.scatters[indx].set_visible(False)  # set current parameter to False
-                self.activated_checkbox[indx] = False  # set visibility parameter to False
+        if "int" or "interval" not in parsed_word:
+            for indx, value in enumerate(self.parameters):
+                if indx == index:
+                    self.get_scatter_update(index)  # update scatter
+                    self.scatters[indx].set_visible(True)  # set it visible
+                    self.activated_checkbox[indx] = True  # set visibility parameter to True
+                else:
+                    self.scatters[indx].set_visible(False)  # set current parameter to False
+                    self.activated_checkbox[indx] = False  # set visibility parameter to False
+        else:
+            for indx, value in enumerate(self.parameters):
+                if indx == index:
+                    self.get_line_update(index)
+                # self.intervals[indx].set_visible(True)
 
         plt.draw()
 
