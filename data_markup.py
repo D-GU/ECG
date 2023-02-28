@@ -338,7 +338,7 @@ class Callback:
         # else for loop for scatters
         parsed_word = label.split("_")
 
-        if "int" or "interval" not in parsed_word:
+        if "Int" not in parsed_word:
             for indx, value in enumerate(self.parameters):
                 if indx == index:
                     self.get_scatter_update(index)  # update scatter
@@ -348,6 +348,7 @@ class Callback:
                     self.scatters[indx].set_visible(False)  # set current parameter to False
                     self.activated_checkbox[indx] = False  # set visibility parameter to False
         else:
+            print("TRUE")
             for indx, value in enumerate(self.parameters):
                 if indx == index:
                     self.get_line_update(index)
