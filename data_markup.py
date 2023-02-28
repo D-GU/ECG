@@ -88,58 +88,53 @@ class Callback:
             pickradius=5
         )
 
-        # Scatters array
-        self.scatters = np.array([scatter_p, scatter_q])
-
-        self.line_int_p = self.ax.plot(
-            (0, 0),
-            (0, 0),
-            marker="x",
-            color="green",
+        scatter_p_intervals = plt.scatter(
+            x=self.get_parameter_xdata("P_Int"),
+            y=self.get_parameter_ydata("P_Int"),
+            marker=".",
+            c="blue",
             picker=True,
             pickradius=5
         )
 
-        # self.line_int_q = self.ax.plot(
-        #     (0, 0),
-        #     (0, 0),
-        #     marker="x",
-        #     color="purple",
-        #     picker=True,
-        #     pickradius=5
-        # )
-
-        # self.intervals = np.array([self.line_int_p])
+        # Scatters array
+        self.scatters = np.array([scatter_p, scatter_q, scatter_p_intervals])
 
         # Make every scatter and bound in array invisible
         for scatter in self.scatters:
             scatter.set_visible(False)
-            # interval.set_visible(False)
 
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
-        current = np.array(
-            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
-        )
-        return np.array([data[1] for data in current])
+        parsed_word = self.parameter_id.split("_")
+
+        if "Int" not in parsed_word:
+            current = np.array(
+                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+            )
+            return np.array([data[1] for data in current])
+        else:
+            current = np.array(
+                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+            )
+
+            return np.array([np.array(data[:, 1]) for data in current]).flatten()
 
     def get_parameter_xdata(self, parameter_id):
         # Collect current y data of given parameter
-        current = np.array(
-            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
-        )
-        return np.array([data[0] for data in current])
+        parsed_word = self.parameter_id.split("_")
 
-    def get_line_x_data(self, parameter_id):
-        current = self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
-        cur_x = current[0][::]
-        print(cur_x.shape)
-        return np.array(cur_x)
+        if "Int" not in parsed_word:
+            current = np.array(
+                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+            )
+            return np.array([data[0] for data in current])
+        else:
+            current = np.array(
+                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+            )
 
-    def get_line_y_data(self, parameter_id):
-        current = self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
-        cur_y = current[1][::]
-        return np.array(cur_y)
+            return np.array([np.array(data[:, 0]) for data in current]).flatten()
 
     def lead_next(self, event):
         self.lead_id += 1  # Increment lead id
@@ -314,14 +309,6 @@ class Callback:
 
             plt.draw()
 
-    def get_line_update(self, line_id):
-        cur_x = self.get_line_x_data(line_id)
-        cur_y = self.get_line_y_data(line_id)
-
-        # Update boundaries dataß
-        # self.bounds[line_id].ydata = (cur_x), (cur_y)
-        ...
-
     def get_scatter_update(self, scatter_id):
         updated_data = np.c_[
             self.get_parameter_xdata(self.radio_labels[scatter_id]),
@@ -338,21 +325,14 @@ class Callback:
         # else for loop for scatters
         parsed_word = label.split("_")
 
-        if "Int" not in parsed_word:
-            for indx, value in enumerate(self.parameters):
-                if indx == index:
-                    self.get_scatter_update(index)  # update scatter
-                    self.scatters[indx].set_visible(True)  # set it visible
-                    self.activated_checkbox[indx] = True  # set visibility parameter to True
-                else:
-                    self.scatters[indx].set_visible(False)  # set current parameter to False
-                    self.activated_checkbox[indx] = False  # set visibility parameter to False
-        else:
-            print("TRUE")
-            for indx, value in enumerate(self.parameters):
-                if indx == index:
-                    self.get_line_update(index)
-                # self.intervals[indx].set_visible(True)
+        for indx, value in enumerate(self.parameters):
+            if indx == index:
+                self.get_scatter_update(index)  # update scatter
+                self.scatters[indx].set_visible(True)  # set it visible
+                self.activated_checkbox[indx] = True  # set visibility parameter to True
+            else:
+                self.scatters[indx].set_visible(False)  # set current parameter to False
+                self.activated_checkbox[indx] = False  # set visibility parameter to False
 
         plt.draw()
 
@@ -360,11 +340,12 @@ class Callback:
         self.pressed = True  # Change current pressed state to True (button been pressed)
 
         # if event is left mouse button press and the clicked point within the subplot
-        if event.inaxes == self.line.axes and event.button is MouseButton.LEFT:
+        if event.inaxes == self.line.axes and event.button is MouseButton.LEFT and "Int" not in self.parameter_id.split("_"):
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
-        if event.inaxes == self.line.axes and event.button is MouseButton.MIDDLE:
+        if event.inaxes == self.line.axes and event.button is MouseButton.MIDDLE and \
+                "Int" in self.parameter_id.split("_"):
             self.current_x = event.xdata
             self.current_y = event.ydata
 
@@ -372,33 +353,30 @@ class Callback:
 
     def onrelease(self, event):
         self.pressed = False
-        if event.button is MouseButton.MIDDLE:
-            self.pressed = False
+        if event.button is MouseButton.MIDDLE and "Int" in self.parameter_id.split("_"):
             x = event.xdata
             y = event.ydata
 
-            self.ax.plot(
-                self.current_x,
-                self.current_y,
-                x,
-                y,
-                marker="x",
-                linestyle='dashed',
-                linewidth=2,
-                color="red",
-                picker=True,
-                pickradius=5
+            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id & 12].append(
+                ((self.current_x, self.current_y), (x, y))
             )
+
+            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+            # self.get_line_update(self.radio_labels.index(self.parameter_id))
 
             plt.draw()
 
     def onpick(self, event):
-        print(event.ind[0])
-        if event.mouseevent.button == 3:
+        if event.mouseevent.button == 3 and "Int" in self.parameter_id.split("_"):
             ind = event.ind[0]
+            print(ind)
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
-
+        else:
+            ind = event.ind[0]
+            print(ind)
+            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
+            self.get_scatter_update(self.radio_labels.index(self.parameter_id))
         plt.draw()
 
 
