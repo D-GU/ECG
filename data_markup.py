@@ -464,8 +464,7 @@ class Callback:
 
 
 class MarkUpper:
-    def __init__(self, data_path, session_file_path):
-        self.session_file_path = session_file_path
+    def __init__(self, data_path):
         self.data = data_path
 
         self.sample_id = ...  # Should be reading it from the session file
@@ -547,5 +546,5 @@ class MarkUpper:
         plt.show()
 
 
-mm = MarkUpper(ecg_file, "user_session.dat")
+mm = MarkUpper(ecg_file)
 mm.run_markup()
