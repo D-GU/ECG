@@ -1,13 +1,17 @@
+import csv
 import os
 
+import fsspec.implementations.webhdfs
 import matplotlib.markers
 import numpy as np
 import matplotlib.pyplot as plt
+import pandas as pd
 
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
 from matplotlib.backend_bases import MouseButton
+from csv import DictReader
 
 # If session file is already exists then
 # read the data from it and continue markup it
@@ -15,6 +19,7 @@ from matplotlib.backend_bases import MouseButton
 #     with open("user_session.dat", "wb") as session_file:
 #         session_file.write(bytearray([0, 0]))
 
+csv.field_size_limit(100000000)
 file = np.load("ecg_ptbxl.npy", allow_pickle=True)
 sample = file[0][:, 0]
 
@@ -36,12 +41,19 @@ class Callback:
 
         self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
 
-        self.press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
+        self.button_press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
         self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
         self.release = self.fig.canvas.mpl_connect("button_release_event", self.onrelease)
-        self.zoom = self.fig.canvas.mpl_connect('scroll_event', self.zoom)
+        self.zoom = self.fig.canvas.mpl_connect("scroll_event", self.zoom)
+        self.key_press = self.fig.canvas.mpl_connect("key_press_event", self.on_key_press)
 
+        self.filename = "test.csv"
         # Dict of parameters to mark
+
+        # self.parameters = [
+        #     [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
+        # ]
+
         self.parameters = {
             "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
             "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
@@ -52,7 +64,6 @@ class Callback:
             "Q_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
             "R_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
         }
-
         self.radio_labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]  # list of labels for checkbox
         self.activated_checkbox = [
             False, False, False, False, False, False, False, False
@@ -99,6 +110,7 @@ class Callback:
             pickradius=5
         )
 
+        # Scatter of T amplitude parameter
         scatter_t = plt.scatter(
             x=self.get_parameter_xdata("T"),
             y=self.get_parameter_ydata("T"),
@@ -108,6 +120,7 @@ class Callback:
             pickradius=5
         )
 
+        # Scatter of P interval
         scatter_p_intervals = plt.scatter(
             x=self.get_parameter_xdata("P_Int"),
             y=self.get_parameter_ydata("P_Int"),
@@ -117,6 +130,7 @@ class Callback:
             pickradius=5
         )
 
+        # Scatter of Q interval
         scatter_q_intervals = plt.scatter(
             x=self.get_parameter_xdata("Q_Int"),
             y=self.get_parameter_ydata("Q_Int"),
@@ -126,6 +140,7 @@ class Callback:
             pickradius=5
         )
 
+        # Scatter of R parameter
         scatter_r_intervals = plt.scatter(
             x=self.get_parameter_xdata("R_Int"),
             y=self.get_parameter_ydata("R_Int"),
@@ -135,7 +150,7 @@ class Callback:
             pickradius=5
         )
 
-        # Scatters array
+        # An array of all scatters
         self.scatters = np.array([
             scatter_p,
             scatter_q,
@@ -444,11 +459,14 @@ class Callback:
             scale_factor = 1
 
         # set new limits
-        self.ax.set_xlim([xdata - cur_xrange * scale_factor,
-                          xdata + cur_xrange * scale_factor])
-        self.ax.set_ylim([ydata - cur_yrange * scale_factor,
-                          ydata + cur_yrange * scale_factor])
+        self.ax.set_xlim([xdata - cur_xrange * scale_factor, xdata + cur_xrange * scale_factor])
+        self.ax.set_ylim([ydata - cur_yrange * scale_factor, ydata + cur_yrange * scale_factor])
+
         plt.draw()  # force re-draw
+
+    def on_key_press(self, event):
+        if event.key == 'q':
+            ...
 
 
 class MarkUpper:
