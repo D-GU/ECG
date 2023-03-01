@@ -1,27 +1,15 @@
-import csv
 import os
 
-import fsspec.implementations.webhdfs
 import matplotlib.markers
 import numpy as np
 import matplotlib.pyplot as plt
-import pandas as pd
 
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
 from matplotlib.widgets import RadioButtons
 from matplotlib.backend_bases import MouseButton
-from csv import DictReader
 
-# If session file is already exists then
-# read the data from it and continue markup it
-# if not os.path.isfile("user_session.dat"):
-#     with open("user_session.dat", "wb") as session_file:
-#         session_file.write(bytearray([0, 0]))
-
-csv.field_size_limit(100000000)
-file = np.load("ecg_ptbxl.npy", allow_pickle=True)
-sample = file[0][:, 0]
+ecg_file = np.load("ecg_ptbxl.npy", allow_pickle=True)  # file of ecg samples
 
 
 class Callback:
@@ -41,7 +29,7 @@ class Callback:
 
         self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
 
-        self.button_press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
+        self.button_mouse_press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
         self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
         self.release = self.fig.canvas.mpl_connect("button_release_event", self.onrelease)
         self.zoom = self.fig.canvas.mpl_connect("scroll_event", self.zoom)
@@ -49,8 +37,8 @@ class Callback:
 
         self.filename = "test.npy"
 
+        # If markup file exist take that file as a data else create a new one
         if os.path.exists(self.filename):
-            print("File exists")
             self.parameters = np.load(self.filename, allow_pickle=True)
         else:
             self.parameters = [
@@ -71,7 +59,7 @@ class Callback:
         self.radio_labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]  # list of labels for checkbox
         self.activated_checkbox = [
             False, False, False, False, False, False, False, False
-        ]  # list of activation in checkbox
+        ]  # list of activated parameters
 
         # Plot chosen parameter as point with specific marker
         # Scatter of P amplitude parameter
@@ -503,7 +491,7 @@ class MarkUpper:
         self.ax.set_xlim(-5, self.data.shape[1] + 10)  # Set x limits
         self.ax.set_ylim(-0.5, 1)  # Set y limits
 
-        self.line, = self.ax.plot(sample)
+        self.line, = self.ax.plot(data_path[0][:, 0])
 
     def run_markup(self):
         # Call callback function class
@@ -559,5 +547,5 @@ class MarkUpper:
         plt.show()
 
 
-mm = MarkUpper(file, "user_session.dat")
+mm = MarkUpper(ecg_file, "user_session.dat")
 mm.run_markup()
