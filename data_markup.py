@@ -47,23 +47,27 @@ class Callback:
         self.zoom = self.fig.canvas.mpl_connect("scroll_event", self.zoom)
         self.key_press = self.fig.canvas.mpl_connect("key_press_event", self.on_key_press)
 
-        self.filename = "test.csv"
-        # Dict of parameters to mark
+        self.filename = "test.npy"
 
-        # self.parameters = [
-        #     [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
-        # ]
+        if os.path.exists(self.filename):
+            print("File exists")
+            self.parameters = np.load(self.filename, allow_pickle=True)
+        else:
+            self.parameters = [
+                [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
+            ]
 
-        self.parameters = {
-            "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "R": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "S": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "T": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "P_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "Q_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "R_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+        self.ids = {
+            "P": 0,
+            "Q": 1,
+            "R": 2,
+            "S": 3,
+            "T": 4,
+            "P_Int": 5,
+            "Q_Int": 6,
+            "R_Int": 7,
         }
+
         self.radio_labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]  # list of labels for checkbox
         self.activated_checkbox = [
             False, False, False, False, False, False, False, False
@@ -172,12 +176,12 @@ class Callback:
 
         if "Int" not in parsed_word:
             current = np.array(
-                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+                self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12]
             )
             return np.array([data[1] for data in current])
         else:
             current = np.array(
-                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+                self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12]
             )
 
             return np.array([np.array(data[:, 1]) for data in current]).flatten()
@@ -188,12 +192,12 @@ class Callback:
 
         if "Int" not in parsed_word:
             current = np.array(
-                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+                self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12]
             )
             return np.array([data[0] for data in current])
         else:
             current = np.array(
-                self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12]
+                self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12]
             )
 
             return np.array([np.array(data[:, 0]) for data in current]).flatten()
@@ -400,7 +404,8 @@ class Callback:
         # if event is left mouse button press and the clicked point within the subplot
         if event.inaxes == self.line.axes and event.button is MouseButton.LEFT \
                 and "Int" not in self.parameter_id.split("_") and toolbar_condition is None:
-            self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
+            self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][
+                self.lead_id % 12].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
         # If event middle mouse and selected parameter is any interval
@@ -417,7 +422,8 @@ class Callback:
             x = event.xdata
             y = event.ydata
 
-            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12].append(
+            self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][
+                self.lead_id % 12].append(
                 ((self.current_x, self.current_y), (x, y))
             )
 
@@ -429,11 +435,13 @@ class Callback:
         if event.mouseevent.button == 3 and "Int" in self.parameter_id.split("_"):
             ind = event.ind[0]
             interval_to_delete = int(np.ceil((ind + 1) * 0.5)) - 1
-            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(interval_to_delete)
+            self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12].pop(
+                interval_to_delete)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
         else:
             ind = event.ind[0]
-            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
+            self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][self.lead_id % 12].pop(
+                ind)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
         plt.draw()
@@ -447,11 +455,9 @@ class Callback:
         xdata = event.xdata  # get event x location
         ydata = event.ydata  # get event y location
         if event.button == 'up':
-            print("UP")
             # deal with zoom in
             scale_factor = 1 / base_scale * 2
         elif event.button == 'down':
-            print("DOWN")
             # deal with zoom out
             scale_factor = base_scale
         else:
@@ -466,7 +472,7 @@ class Callback:
 
     def on_key_press(self, event):
         if event.key == 'q':
-            ...
+            np.save(self.filename, self.parameters)
 
 
 class MarkUpper:
