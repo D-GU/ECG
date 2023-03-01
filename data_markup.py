@@ -39,33 +39,24 @@ class Callback:
         self.press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
         self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
         self.release = self.fig.canvas.mpl_connect("button_release_event", self.onrelease)
+        self.zoom = self.fig.canvas.mpl_connect('scroll_event', self.zoom)
 
         # Dict of parameters to mark
         self.parameters = {
             "P": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
             "Q": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
-            "P_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)]
+            "R": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "S": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "T": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "P_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "Q_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
+            "R_Int": [[[] for _ in range(12)] for _ in range(self.quantity_samples)],
         }
 
-        # Set different markers to each parameter
-        self.markers_box = {
-            "P": matplotlib.markers.CARETUPBASE,
-            "P interval": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "blue"),
-            "Q": "X",
-            "QRS": (matplotlib.markers.CARETLEFT, matplotlib.markers.CARETRIGHT, "red")
-        }
-
-        self.radio_labels = ["P", "Q", "P_Int"]  # list of labels for checkbox
-        self.activated_checkbox = [False, False, False]  # list of activation in checkbox
-
-        # A list of color to plot
-        self.color_list = (
-            "red",
-            "blue",
-            "black",
-            "green",
-            "orange",
-        )
+        self.radio_labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]  # list of labels for checkbox
+        self.activated_checkbox = [
+            False, False, False, False, False, False, False, False
+        ]  # list of activation in checkbox
 
         # Plot chosen parameter as point with specific marker
         # Scatter of P amplitude parameter
@@ -82,8 +73,37 @@ class Callback:
         scatter_q = plt.scatter(
             x=self.get_parameter_xdata("Q"),
             y=self.get_parameter_ydata("Q"),
-            marker="D",
+            marker="X",
             c="blue",
+            picker=True,
+            pickradius=5
+        )
+
+        # Scatter of Q amplitude parameter
+        scatter_r = plt.scatter(
+            x=self.get_parameter_xdata("R"),
+            y=self.get_parameter_ydata("R"),
+            marker="X",
+            c="black",
+            picker=True,
+            pickradius=5
+        )
+
+        # Scatter of Q amplitude parameter
+        scatter_s = plt.scatter(
+            x=self.get_parameter_xdata("S"),
+            y=self.get_parameter_ydata("S"),
+            marker="X",
+            c="green",
+            picker=True,
+            pickradius=5
+        )
+
+        scatter_t = plt.scatter(
+            x=self.get_parameter_xdata("T"),
+            y=self.get_parameter_ydata("T"),
+            marker="X",
+            c="purple",
             picker=True,
             pickradius=5
         )
@@ -91,14 +111,41 @@ class Callback:
         scatter_p_intervals = plt.scatter(
             x=self.get_parameter_xdata("P_Int"),
             y=self.get_parameter_ydata("P_Int"),
-            marker=".",
+            marker=matplotlib.markers.CARETDOWNBASE,
+            c="black",
+            picker=True,
+            pickradius=5
+        )
+
+        scatter_q_intervals = plt.scatter(
+            x=self.get_parameter_xdata("Q_Int"),
+            y=self.get_parameter_ydata("Q_Int"),
+            marker=matplotlib.markers.CARETDOWNBASE,
             c="blue",
             picker=True,
             pickradius=5
         )
 
+        scatter_r_intervals = plt.scatter(
+            x=self.get_parameter_xdata("R_Int"),
+            y=self.get_parameter_ydata("R_Int"),
+            marker=matplotlib.markers.CARETDOWNBASE,
+            c="purple",
+            picker=True,
+            pickradius=5
+        )
+
         # Scatters array
-        self.scatters = np.array([scatter_p, scatter_q, scatter_p_intervals])
+        self.scatters = np.array([
+            scatter_p,
+            scatter_q,
+            scatter_r,
+            scatter_s,
+            scatter_t,
+            scatter_p_intervals,
+            scatter_q_intervals,
+            scatter_r_intervals
+        ])
 
         # Make every scatter and bound in array invisible
         for scatter in self.scatters:
@@ -320,11 +367,6 @@ class Callback:
         self.parameter_id = label
         index = self.radio_labels.index(label)
 
-        # if interval in token(label)
-        # for loop for boundaries
-        # else for loop for scatters
-        parsed_word = label.split("_")
-
         for indx, value in enumerate(self.parameters):
             if indx == index:
                 self.get_scatter_update(index)  # update scatter
@@ -338,14 +380,17 @@ class Callback:
 
     def onclick(self, event):
         self.pressed = True  # Change current pressed state to True (button been pressed)
+        toolbar_condition = self.ax.get_navigate_mode()  # Check if toolbar is active
 
         # if event is left mouse button press and the clicked point within the subplot
-        if event.inaxes == self.line.axes and event.button is MouseButton.LEFT and "Int" not in self.parameter_id.split("_"):
+        if event.inaxes == self.line.axes and event.button is MouseButton.LEFT \
+                and "Int" not in self.parameter_id.split("_") and toolbar_condition is None:
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].append((event.xdata, event.ydata))
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
-        if event.inaxes == self.line.axes and event.button is MouseButton.MIDDLE and \
-                "Int" in self.parameter_id.split("_"):
+        # If event middle mouse and selected parameter is any interval
+        if event.inaxes == self.line.axes and event.button is MouseButton.MIDDLE \
+                and "Int" in self.parameter_id.split("_"):
             self.current_x = event.xdata
             self.current_y = event.ydata
 
@@ -357,27 +402,53 @@ class Callback:
             x = event.xdata
             y = event.ydata
 
-            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id & 12].append(
+            self.parameters[self.parameter_id][self.sample_id % self.quantity_samples][self.lead_id % 12].append(
                 ((self.current_x, self.current_y), (x, y))
             )
 
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
-            # self.get_line_update(self.radio_labels.index(self.parameter_id))
 
             plt.draw()
 
     def onpick(self, event):
         if event.mouseevent.button == 3 and "Int" in self.parameter_id.split("_"):
             ind = event.ind[0]
-            print(ind)
-            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
+            interval_to_delete = int(np.ceil((ind + 1) * 0.5)) - 1
+            self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(interval_to_delete)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
         else:
             ind = event.ind[0]
-            print(ind)
             self.parameters[self.parameter_id][self.sample_id][self.lead_id].pop(ind)
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
+
         plt.draw()
+
+    def zoom(self, event):
+        base_scale = 5
+        cur_xlim = self.ax.get_xlim()
+        cur_ylim = self.ax.get_ylim()
+        cur_xrange = (cur_xlim[1] - cur_xlim[0]) * .2
+        cur_yrange = (cur_ylim[1] - cur_ylim[0]) * .2
+        xdata = event.xdata  # get event x location
+        ydata = event.ydata  # get event y location
+        if event.button == 'up':
+            print("UP")
+            # deal with zoom in
+            scale_factor = 1 / base_scale * 2
+        elif event.button == 'down':
+            print("DOWN")
+            # deal with zoom out
+            scale_factor = base_scale
+        else:
+            # deal with something that should never happen
+            scale_factor = 1
+
+        # set new limits
+        self.ax.set_xlim([xdata - cur_xrange * scale_factor,
+                          xdata + cur_xrange * scale_factor])
+        self.ax.set_ylim([ydata - cur_yrange * scale_factor,
+                          ydata + cur_yrange * scale_factor])
+        plt.draw()  # force re-draw
 
 
 class MarkUpper:
@@ -451,8 +522,9 @@ class MarkUpper:
 
         # Init radio button axes and labels
         ax_radio = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
-        labels = ["P", "Q", "P_Int"]
-        activated = [False, False, False]
+
+        labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]
+        activated = [False, False, False, False, False, False, False, False]
 
         # Init radio button
         radio_button = RadioButtons(ax_radio, labels, activated)
