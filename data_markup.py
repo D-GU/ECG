@@ -3,6 +3,7 @@ import os
 import matplotlib.markers
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy.spatial
 
 from matplotlib.widgets import Button
 from matplotlib.widgets import TextBox
@@ -157,6 +158,18 @@ class Callback:
         # Make every scatter and bound in array invisible
         for scatter in self.scatters:
             scatter.set_visible(False)
+
+    def closest_point_distance(self, ckdtree, x, y):
+        # returns distance to closest point
+        return ckdtree.query([x, y])[0]
+
+    def closest_point_id(self, ckdtree, x, y):
+        # returns index of closest point
+        return ckdtree.query([x, y])[1]
+
+    def closest_point_coords(self, ckdtree, x, y):
+        # returns coordinates of closest point
+        return ckdtree.data[self.closest_point_id(ckdtree, x, y)]
 
     def get_parameter_ydata(self, parameter_id):
         # Collect current x data of given parameter
@@ -388,6 +401,9 @@ class Callback:
     def onclick(self, event):
         self.pressed = True  # Change current pressed state to True (button been pressed)
         toolbar_condition = self.ax.get_navigate_mode()  # Check if toolbar is active
+
+        line_x_data = self.line.get_xdata()
+        line_y_data = self.line.get_ydata()
 
         # if event is left mouse button press and the clicked point within the subplot
         if event.inaxes == self.line.axes and event.button is MouseButton.LEFT \
