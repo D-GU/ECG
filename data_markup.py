@@ -435,16 +435,43 @@ class Callback:
         plt.draw()
 
     def zoom(self, event):
-        base_scale = 5
+        prex = 0
+        prey = 0
+        prexdata = 0
+        preydata = 0
+        base_scale = 2.
+        curx = event.x
+        cury = event.y
+
+        # if not changed mouse position(or changed so little)
+        # remain the pre scale center
+        if abs(curx - prex) < 10 and abs(cury - prey) < 10:
+            # remain same
+            xdata = prexdata
+            ydata = preydata
+        # if changed mouse position ,also change the cur scale center
+        else:
+            # change
+            xdata = event.xdata  # get event x location
+            ydata = event.ydata  # get event y location
+
+            # update previous location data
+            prex = event.x
+            prey = event.y
+            prexdata = xdata
+            preydata = ydata
+
+        # get the current x and y limits
         cur_xlim = self.ax.get_xlim()
         cur_ylim = self.ax.get_ylim()
-        cur_xrange = (cur_xlim[1] - cur_xlim[0]) * .2
-        cur_yrange = (cur_ylim[1] - cur_ylim[0]) * .2
-        xdata = event.xdata  # get event x location
-        ydata = event.ydata  # get event y location
+
+        cur_xrange = (cur_xlim[1] - cur_xlim[0]) * .5
+        cur_yrange = (cur_ylim[1] - cur_ylim[0]) * .5
+
+        # log.debug((xdata, ydata))
         if event.button == 'up':
             # deal with zoom in
-            scale_factor = 1 / base_scale * 2
+            scale_factor = 1 / base_scale
         elif event.button == 'down':
             # deal with zoom out
             scale_factor = base_scale
@@ -453,8 +480,15 @@ class Callback:
             scale_factor = 1
 
         # set new limits
-        self.ax.set_xlim([xdata - cur_xrange * scale_factor, xdata + cur_xrange * scale_factor])
-        self.ax.set_ylim([ydata - cur_yrange * scale_factor, ydata + cur_yrange * scale_factor])
+        self.ax.set_xlim([
+            xdata - cur_xrange * scale_factor,
+            xdata + cur_xrange * scale_factor
+        ])
+
+        self.ax.set_ylim([
+            ydata - cur_yrange * scale_factor,
+            ydata + cur_yrange * scale_factor
+        ])
 
         plt.draw()  # force re-draw
 
@@ -502,8 +536,8 @@ class MarkUpper:
         # Connect cursor to specific event
 
         # Init axes of text buttons
-        ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.03, 0.075])
-        ax_lead_text_box = self.fig.add_axes([0.1, 0.15, 0.03, 0.075])
+        ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.04, 0.025])
+        ax_lead_text_box = self.fig.add_axes([0.1, 0.15, 0.04, 0.025])
 
         # Init text buttons
         text_sample_button = TextBox(ax_sample_text_box, "Sample ID", initial=str(0))
@@ -532,7 +566,7 @@ class MarkUpper:
         button_sample_prev.on_clicked(callback.sample_prev)
 
         # Init radio button axes and labels
-        ax_radio = self.fig.add_axes([0.7, 0.05, 0.1, 0.075])
+        ax_radio = self.fig.add_axes([0.7, 0.05, 0.1, 0.095])
 
         labels = ["P", "Q", "R", "S", "T", "P_Int", "Q_Int", "R_Int"]
         activated = [False, False, False, False, False, False, False, False]
