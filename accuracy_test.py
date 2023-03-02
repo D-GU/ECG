@@ -105,19 +105,162 @@ def plot_signal_with_annotation(index):
     signal, samples = get_full_ecg(index)
 
     sample = signal[:, LEADS.index("ii")]
-
     # extract sample from annotations
     wfdb.plot_items(signal, samples)
 
 
-signals, samples = get_full_ecg(200)
+def grouped(itr, n=3):
+    itr = iter(itr)
+    end = object()
+    while True:
+        vals = tuple(next(itr, end) for _ in range(n))
+        if vals[-1] is end:
+            return
+        yield vals
+
+
+class EGCSignal:
+    """
+    This class has 4 main purposes:
+    1. To store the signal and its annotations
+    2. To cut the signal once at the beginning and once at the end
+    3. To plot the ECG in different ways
+    4. To convert the annotation in a one hot encoding
+
+    Note that doesn't store the entire ECG, but only one lead
+
+    Also has a method to initialize the class without explicitly passing the signal and annotations
+    but with the index and lead of the record
+    """
+
+    def __init__(self, signal, time_points, symbol, categories=None):
+        self.signal: np.ndarray = signal
+        self.time_points: np.ndarray = time_points
+        self.symbols: list[str] = symbol
+        self.symbol_to_category = {
+            'N': 0,
+            't': 1,
+            'p': 2
+        }
+        self.category_to_symbol = {
+            0: 'N',
+            1: 't',
+            2: 'p'
+        }
+        self.categories = categories if categories is not None else self.symbols_to_category()
+        self._cut_beginning(550)
+        self._cut_end(3500)
+
+    def __getitem__(self, key):
+        return self.signal[key]
+
+    def __len__(self):
+        return len(self.signal)
+
+    def _cut_beginning(self, start_point):
+        self.signal = self.signal[start_point:]
+        self.categories = self.categories[start_point:]
+
+        # now have to check if time_points and symbols are also to cut
+        if start_point > self.time_points[0]:
+            # get the index of the first time point greater than start_point
+            index = np.argmax(self.time_points > start_point)
+            self.time_points = self.time_points[index:]
+            self.symbols = self.symbols[index:]
+
+        self.time_points = self.time_points - start_point
+
+        # check the cut point
+        if self.categories[0] != -1:
+            # if the first symbol is a ')' then i have to prepend a '(' and a letter from self.category_to_symbol
+            if self.symbols[0] == ')':
+                self.symbols = ['('] + [self.category_to_symbol[self.categories[0]]] + self.symbols
+                self.time_points = np.concatenate(([0, 1], self.time_points))
+            elif self.symbols[0] in self.symbol_to_category:
+                # just prepend '('
+                self.symbols = ['('] + self.symbols
+                self.time_points = np.concatenate(([0], self.time_points))
+
+    def _cut_end(self, end_point):
+        self.signal = self.signal[:end_point]
+        self.categories = self.categories[:end_point]
+
+        index = self.time_points[self.time_points < self.signal.size].size
+        self.time_points = self.time_points[:index]
+        self.symbols = self.symbols[:index]
+
+        # check the cut point
+        if self.categories[-1] != -1:
+            # if the last symbol is a '(' then i have to append a ')' and a letter from self.category_to_symbol
+            if self.symbols[-1] == '(':
+                self.symbols = self.symbols + [self.category_to_symbol[self.categories[-1]]] + [')']
+                self.time_points = np.concatenate((self.time_points, [self.signal.size - 1, self.signal.size]))
+            elif self.symbols[-1] in self.symbol_to_category:
+                # just append ')'
+                self.symbols = self.symbols + [')']
+                self.time_points = np.concatenate((self.time_points, [self.signal.size]))
+
+    def plot(self, ax=None):
+        if ax is None:
+            fig, ax = plt.subplots(figsize=(28, 3))
+        ax.plot(self.signal)
+
+    def plot_with_time_point(self):
+        fig, ax = plt.subplots(figsize=(28, 3))
+        self.plot(ax)
+        ax.scatter(self.time_points, self.signal[self.time_points], c='r', marker='o')
+
+    def plot_with_segments(self):
+        fig, ax = plt.subplots(figsize=(28, 3))
+        self.plot(ax)
+
+        for start, symbol, end in grouped(self.time_points, 3):
+            i = np.nonzero(self.time_points == symbol)[0][0]
+            current_symbol = self.symbols[i]
+            print(f"#{i}/ start: {start} end: {end} symbol:{current_symbol}")
+            color = SEGMENT_TO_COLOR[current_symbol]
+            ax.axvspan(start, end, color=color, alpha=0.4)
+        print(self.time_points)
+    def symbols_to_category(self):
+        """
+        converts the symbols list in a numpy array of integers
+        same length as the signal
+        """
+
+        # first instantiate an array of -1 same length as the signal
+        category = np.full(len(self.signal), -1)
+        # now fill the array with the known category
+        for section in grouped(self.time_points):
+            # unpack the section
+            start, peak, end = section
+
+            # get the category given the peak
+            i = np.nonzero(self.time_points == peak)[0][0]
+            current_symbol = self.symbols[i]
+
+            category[start:end] = self.symbol_to_category[current_symbol]
+        return category
+
+    @staticmethod
+    def from_index_and_lead(index, lead):
+        return EGCSignal(
+            get_signal(index)[:, LEADS.index(lead)],
+            get_annotations(index, lead),
+            get_annotations_symbols(index, lead))
+
+signals, samples = get_full_ecg(150)
 my_sample = signals[:, LEADS.index("ii")]
+sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=my_sample)
+# sample.visualizer()
 
-#sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=my_sample)
-#sample.visualizer()
-
-annotations = get_annotations(200, "ii")
-annotations_symbols = get_annotations_symbols(200, "ii")
-
-#plot_single_lead_ecg(200, "ii")
+# EGCSignal.from_index_and_lead(150, LEADS[4]).plot_with_segments()
+# plot_signal_with_annotation(200)
+plot_single_lead_ecg(150, "ii")
+#plt.show()
 plt.show()
+
+
+
+
+
+
