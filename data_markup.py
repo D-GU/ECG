@@ -33,7 +33,6 @@ class Callback:
         self.button_mouse_press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
         self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
         self.release = self.fig.canvas.mpl_connect("button_release_event", self.onrelease)
-        self.zoom = self.fig.canvas.mpl_connect("scroll_event", self.zoom)
         self.key_press = self.fig.canvas.mpl_connect("key_press_event", self.on_key_press)
 
         self.filename = "test.npy"
@@ -450,64 +449,6 @@ class Callback:
 
         plt.draw()
 
-    def zoom(self, event):
-        prex = 0
-        prey = 0
-        prexdata = 0
-        preydata = 0
-        base_scale = 2.
-        curx = event.x
-        cury = event.y
-
-        # if not changed mouse position(or changed so little)
-        # remain the pre scale center
-        if abs(curx - prex) < 10 and abs(cury - prey) < 10:
-            # remain same
-            xdata = prexdata
-            ydata = preydata
-        # if changed mouse position ,also change the cur scale center
-        else:
-            # change
-            xdata = event.xdata  # get event x location
-            ydata = event.ydata  # get event y location
-
-            # update previous location data
-            prex = event.x
-            prey = event.y
-            prexdata = xdata
-            preydata = ydata
-
-        # get the current x and y limits
-        cur_xlim = self.ax.get_xlim()
-        cur_ylim = self.ax.get_ylim()
-
-        cur_xrange = (cur_xlim[1] - cur_xlim[0]) * .5
-        cur_yrange = (cur_ylim[1] - cur_ylim[0]) * .5
-
-        # log.debug((xdata, ydata))
-        if event.button == 'up':
-            # deal with zoom in
-            scale_factor = 1 / base_scale
-        elif event.button == 'down':
-            # deal with zoom out
-            scale_factor = base_scale
-        else:
-            # deal with something that should never happen
-            scale_factor = 1
-
-        # set new limits
-        self.ax.set_xlim([
-            xdata - cur_xrange * scale_factor,
-            xdata + cur_xrange * scale_factor
-        ])
-
-        self.ax.set_ylim([
-            ydata - cur_yrange * scale_factor,
-            ydata + cur_yrange * scale_factor
-        ])
-
-        plt.draw()  # force re-draw
-
     def on_key_press(self, event):
         if event.key == 'q':
             np.save(self.filename, self.parameters)
@@ -516,9 +457,6 @@ class Callback:
 class MarkUpper:
     def __init__(self, data_path):
         self.data = data_path
-
-        self.sample_id = ...  # Should be reading it from the session file
-        self.lead_id = ...  # Should be reading it from the session file
 
         # Init plot and figure
         self.fig, self.ax = plt.subplots()
@@ -540,16 +478,12 @@ class MarkUpper:
         self.ax.set_xlim(-5, self.data.shape[1] + 10)  # Set x limits
         self.ax.set_ylim(-0.5, 1)  # Set y limits
 
+        # plot the first data
         self.line, = self.ax.plot(data_path[0][:, 0])
 
     def run_markup(self):
         # Call callback function class
         callback = Callback(self.data, 21430, 0, 0, self.ax, self.fig, self.line)
-
-        # Init cursor
-        # cursor = Cursor(self.ax, horizOn=False, vertOn=False)
-
-        # Connect cursor to specific event
 
         # Init axes of text buttons
         ax_sample_text_box = self.fig.add_axes([0.1, 0.2, 0.04, 0.025])
