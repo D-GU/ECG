@@ -90,6 +90,7 @@ def get_single_lead_ecg_with_symbols(index, lead):
 
     return signal, np.array(list(data))
 
+
 # plot single lead ecg with annotations
 def plot_single_lead_ecg(index, lead):
     signal, samples = get_single_lead_ecg(index, lead)
@@ -214,13 +215,23 @@ class EGCSignal:
         fig, ax = plt.subplots(figsize=(28, 3))
         self.plot(ax)
 
+        segments = {
+            "N": [],
+            "t": [],
+            "p": []
+        }
+
         for start, symbol, end in grouped(self.time_points, 3):
             i = np.nonzero(self.time_points == symbol)[0][0]
             current_symbol = self.symbols[i]
-            print(f"#{i}/ start: {start} end: {end} symbol:{current_symbol}")
+
+            segments[current_symbol].append(np.abs(start - end))
+
             color = SEGMENT_TO_COLOR[current_symbol]
             ax.axvspan(start, end, color=color, alpha=0.4)
-        print(self.time_points)
+
+        return segments
+
     def symbols_to_category(self):
         """
         converts the symbols list in a numpy array of integers
@@ -248,19 +259,31 @@ class EGCSignal:
             get_annotations(index, lead),
             get_annotations_symbols(index, lead))
 
-signals, samples = get_full_ecg(150)
-my_sample = signals[:, LEADS.index("ii")]
-sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=my_sample)
-# sample.visualizer()
+ludb_csv = pd.read_csv("markedup_ecg_dataset/physionet.org/files/ludb/1.0.1/ludb.csv")
+#print(ludb_csv)
 
-# EGCSignal.from_index_and_lead(150, LEADS[4]).plot_with_segments()
-# plot_signal_with_annotation(200)
-plot_single_lead_ecg(150, "ii")
-#plt.show()
+sample_num = 198
+
+signals, samples = get_full_ecg(sample_num)  # Get sample
+sample = signals[:, LEADS.index("iii")]  # Get lead
+
+# get data
+visualize_sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=sample)
+# visualize_sample.visualizer()
+
+# Get intervals
+p = visualize_sample.get_intervals()[0]
+
+# Get len of qrs intervals
+p_bound = np.array([np.abs(x - y) for x, y in p[0:7]])
+
+# Get the LUDB QRS len data
+x = EGCSignal.from_index_and_lead(sample_num, LEADS[5]).plot_with_segments()["p"]
+print(x)
+
+# Calculate deltas
+deltas = np.array([np.abs(x - x_) / x for x, x_ in zip(p_bound, x)])
+print(f"Deltas: {deltas}")
+print(f"Mean delta:{deltas.mean()}")
+
 plt.show()
-
-
-
-
-
-
