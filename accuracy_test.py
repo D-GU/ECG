@@ -225,7 +225,7 @@ class EGCSignal:
             i = np.nonzero(self.time_points == symbol)[0][0]
             current_symbol = self.symbols[i]
 
-            segments[current_symbol].append(np.abs(start - end))
+            segments[current_symbol].append((start, end, symbol))
 
             color = SEGMENT_TO_COLOR[current_symbol]
             ax.axvspan(start, end, color=color, alpha=0.4)
@@ -259,8 +259,9 @@ class EGCSignal:
             get_annotations(index, lead),
             get_annotations_symbols(index, lead))
 
+
 ludb_csv = pd.read_csv("markedup_ecg_dataset/physionet.org/files/ludb/1.0.1/ludb.csv")
-#print(ludb_csv)
+# print(ludb_csv)
 
 sample_num = 198
 
@@ -269,21 +270,34 @@ sample = signals[:, LEADS.index("iii")]  # Get lead
 
 # get data
 visualize_sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=sample)
-# visualize_sample.visualizer()
+visualize_sample.visualizer()
 
 # Get intervals
-p = visualize_sample.get_intervals()[0]
-
-# Get len of qrs intervals
-p_bound = np.array([np.abs(x - y) for x, y in p[0:7]])
-
+p = visualize_sample.get_peaks()[2]["ECG_P_Peaks"]
 # Get the LUDB QRS len data
 x = EGCSignal.from_index_and_lead(sample_num, LEADS[5]).plot_with_segments()["p"]
-print(x)
 
-# Calculate deltas
-deltas = np.array([np.abs(x - x_) / x for x, x_ in zip(p_bound, x)])
-print(f"Deltas: {deltas}")
-print(f"Mean delta:{deltas.mean()}")
+# Искомая величина - длина отрезка
+# len = end - start
+# Используя формулы dC = dA + dB - абсолютная погреность
+# dC = dA +- dB / A + B
 
+# for (start, end), (start_t, end_t) in zip(p[1:7], x[1:7]):
+#     delta_start = ((start - start_t) / start)
+#     delta_end = ((end - end_t) / end)
+#
+#     relative_error = (delta_end + delta_start) / (start_t + end_t)
+#     absolute_error = delta_start + delta_end
+#
+#     print(f"\nОтносительная погрешность: {relative_error * 100:.3f} % \n"
+#           f"Абсолютная погреность: {absolute_error * 100:.3f} %")
+
+errors = []
+for peak, (start, end, symbol) in zip(p[1:7], x):
+    delta = (np.abs(symbol - peak) / peak) * 100
+    errors.append(delta)
+    print(f"Относительная погрешность положения пиков: {delta:.3f}%")
+
+errors = np.array(errors)
+print(f"Средняя относительная погрешность: {errors.mean()}%")
 plt.show()
