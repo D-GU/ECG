@@ -299,5 +299,5 @@ for peak, (start, end, symbol) in zip(p[1:7], x):
     print(f"Относительная погрешность положения пиков: {delta:.3f}%")
 
 errors = np.array(errors)
-print(f"Средняя относительная погрешность: {errors.mean()}%")
+print(f"Средняя относительная погрешность: {errors.mean():.3f}%")
 plt.show()
