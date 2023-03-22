@@ -1,8 +1,9 @@
-import matplotlib.markers
 import matplotlib.pyplot as plt
 import numpy as np
 
 from matplotlib.lines import Line2D
+
+import functions
 from functions import get_durations, get_qst_peaks, preprocess, get_amplitude
 from raw_data import get_raw_data
 
@@ -19,7 +20,7 @@ class Visualizer:
         self.grid_minor_bound = self.sampling_rate * self.recording_speed
         self.step_minor = (self.grid_minor_bound / self.recording_speed) / self.recording_speed
 
-        self.clean_signal = self.get_peaks()[0]
+        self.clean_signal = functions.get_clean_signal(self.signal, self.sampling_rate)
         self.peaks = self.get_peaks()[1]
         self.amplitudes = self.get_amplitudes()
         self.intervals = self.get_intervals()
@@ -92,12 +93,13 @@ class Visualizer:
         # preprocessed data and R Peaks
         _preprocessed, info = preprocess(self.signal, self.sampling_rate)
 
-        _cleaned_signal = _preprocessed["ECG_Clean"]
+        _cleaned_signal = functions.get_clean_signal(self.signal, self.sampling_rate)
         _r_peaks = info["ECG_R_Peaks"]
 
         all_peaks = [_r_peaks]
 
         # Get all peaks
+
         _, _peaks = get_qst_peaks(_cleaned_signal, _r_peaks, self.sampling_rate)
 
         # Put each peak in to an array
@@ -122,7 +124,7 @@ class Visualizer:
         """A method to get the intervals to plot"""
 
         _all_peaks = self.get_peaks()[2]
-        _durations, _boundaries = get_durations(self.signal, _all_peaks, self.peaks[0])
+        _durations, _boundaries = get_durations(self.clean_signal, _all_peaks, self.peaks[0])
 
         # Assign each segment to their own kind
         _r_bound = _boundaries["R_Peaks"]
@@ -151,6 +153,10 @@ class Visualizer:
 
     def peaks_data_visualizer(self):
         for counter, (peaks, amps) in enumerate(zip(self.peaks, self.amplitudes)):
+            nan_index = np.where(np.isnan(amps))  # get index of nans
+            amps = np.delete(amps, nan_index)  # remove nans from the amps array
+            peaks = np.delete(peaks, nan_index)  # remove nans from the peaks
+
             self.ax.scatter(peaks, amps, facecolor=self.colors[counter])
             # self.ax.plot(peaks, amps, self.colors[counter])
 
@@ -238,7 +244,7 @@ class Visualizer:
 
 def main():
     data = get_raw_data("ecg_ptbxl.npy")
-    signal = data[0][:, 4]
+    signal = data[0][:, 0]
     sampling_rate = 100
     seconds = 10
     recording_speed = 25
