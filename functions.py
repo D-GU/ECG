@@ -1,7 +1,25 @@
 import numpy as np
+import scipy.signal
 
-from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_filter, ecg_quality
 from pandas import DataFrame, Series
+
+
+def get_clean_signal(_signal, _sampling_rate):
+    # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
+
+    # Apply lowpass filter
+    _cleaned = signal_filter(
+        signal=_signal, sampling_rate=_sampling_rate, lowcut=0.5, method="butterworth", order=5
+    )
+
+    _cleaned = signal_filter(
+        signal=_cleaned, sampling_rate=_sampling_rate, highcut=10, method="butterworth", order=5
+    )
+
+    _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
+
+    return _cleaned
 
 
 def preprocess(_ecg_signal, _sampling_rate):
@@ -174,7 +192,7 @@ def get_durations(_signal: np.array, _peaks: dict, _r_peaks: np.array):
 
 
 def get_amplitude(_signal, _time_coordinates: np.array):
-    return np.array([_signal[i] for i in _time_coordinates])
+    return np.array([_signal[int(i)] if not np.isnan(i) else np.nan for i in _time_coordinates])
 
 
 def get_pct_change(peaks: np.array):
