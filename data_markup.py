@@ -10,6 +10,8 @@ from matplotlib.widgets import RadioButtons
 from matplotlib.backend_bases import MouseButton
 from math import dist
 
+import functions
+
 ecg_file = np.load("ecg_ptbxl.npy", allow_pickle=True)  # file of ecg samples
 
 
@@ -28,7 +30,7 @@ class Callback:
         self.current_y = None  # Current y data of pressed event
         self.pressed = False  # State if button been pressed
 
-        self.to_plot = data[sample_id][:, lead_id]  # current data to plot on the plot
+        self.to_plot = functions.get_clean_signal(data[sample_id][:, lead_id], 100)  # current data to plot on the plot
 
         self.button_mouse_press = self.fig.canvas.mpl_connect("button_press_event", self.onclick)
         self.pick = self.fig.canvas.mpl_connect("pick_event", self.onpick)
@@ -193,7 +195,7 @@ class Callback:
     def lead_next(self, event):
         self.lead_id += 1  # Increment lead id
         i = self.lead_id % 12  # Make sure that lead id stays within the ring
-        self.to_plot = self.data[self.sample_id][:, i]  # Update data to plot
+        self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, i], 100)  # Update data to plot
 
         # Update scatter parameters to plot
         self.get_scatter_update(
@@ -216,7 +218,7 @@ class Callback:
     def lead_prev(self, event):
         self.lead_id -= 1  # Decrement lead_id
         i = self.lead_id % 12  # Make sure lead id stays within the ring
-        self.to_plot = self.data[self.sample_id][:, i]  # Current data to plot
+        self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, i], 100)  # Current data to plot
 
         # Update scatter parameters to plot
         self.get_scatter_update(
@@ -240,7 +242,7 @@ class Callback:
     def sample_next(self, event):
         self.sample_id += 1
         i = self.sample_id % self.quantity_samples
-        self.to_plot = self.data[i][:, 0]
+        self.to_plot = functions.get_clean_signal(self.data[i][:, 0], 100)
 
         # Update scatter parameters to plot
         self.get_scatter_update(
@@ -264,7 +266,7 @@ class Callback:
     def sample_prev(self, event):
         self.sample_id -= 1
         i = self.sample_id % self.quantity_samples
-        self.to_plot = self.data[i][:, 0]
+        self.to_plot = functions.get_clean_signal(self.data[i][:, 0], 100)
 
         # Update scatter parameters to plot
         self.get_scatter_update(
@@ -288,7 +290,7 @@ class Callback:
     def submit_sample_data(self, text):
         if not text.isnumeric():
             self.sample_id = self.sample_id
-            self.to_plot = self.data[self.sample_id][:, 0]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, 0], 100)
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
             self.line.set_ydata(self.to_plot)
@@ -297,7 +299,7 @@ class Callback:
 
         if int(text) < 0 or int(text) > self.quantity_samples - 1:
             self.sample_id = self.sample_id
-            self.to_plot = self.data[self.sample_id][:, 0]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, 0], 100)
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{0} / 11")
             self.line.set_ydata(self.to_plot)
@@ -306,7 +308,7 @@ class Callback:
 
         else:
             self.sample_id = int(text)
-            self.to_plot = self.data[self.sample_id][:, 0]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, 0], 100)
 
             # Update scatter parameters to plot
             self.get_scatter_update(
@@ -327,7 +329,7 @@ class Callback:
     def submit_lead_data(self, text):
         if not text.isnumeric():
             self.lead_id = self.lead_id
-            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, self.lead_id], 100)
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
             self.line.set_ydata(self.to_plot)
@@ -336,7 +338,7 @@ class Callback:
 
         if int(text) < 0 or int(text) > self.quantity_samples - 1:
             self.lead_id = self.lead_id
-            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, self.lead_id], 100)
 
             self.ax.set_xlabel(f"{self.sample_id % self.quantity_samples} / 21429\n{self.lead_id % 12} / 11")
             self.line.set_ydata(self.to_plot)
@@ -345,7 +347,7 @@ class Callback:
 
         else:
             self.lead_id = int(text)
-            self.to_plot = self.data[self.sample_id][:, self.lead_id]
+            self.to_plot = functions.get_clean_signal(self.data[self.sample_id][:, self.lead_id], 100)
 
             # Update scatter parameters to plot
             self.get_scatter_update(
@@ -387,7 +389,6 @@ class Callback:
 
     def get_minimal_distance(self, x, y, line_x, line_y):
         distances = np.array([np.abs(x - x_) + np.abs((y * 100) - (y_ * 100)) for x_, y_ in zip(line_x, line_y)])
-
         return np.min(distances)
 
     def onclick(self, event):
@@ -481,7 +482,8 @@ class MarkUpper:
         self.ax.set_ylim(-0.5, 1)  # Set y limits
 
         # plot the first data
-        self.line, = self.ax.plot(data_path[0][:, 0])
+
+        self.line, = self.ax.plot(functions.get_clean_signal(data_path[0][:, 0], _sampling_rate=100))
 
     def run_markup(self):
         # Call callback function class
