@@ -22,7 +22,7 @@ class ECGCleaner:
 
 class BaseStructure:
     def __init__(self, database, sampling_rate, recording_speed, recording_time):
-        self.sample_number = 0
+        self.sample_number = 101
         self.data = database
         self.quantity_samples = database.shape[0]
         self.leads_quantity = 12
@@ -37,7 +37,7 @@ class BaseStructure:
         }
 
         # Set ecg channels as a matrix
-        self.ecg_matrix = np.array([database[self.sample_number][:, i] for i in range(12)])
+        self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
 
         self.x_limit = [150, (self.time_of_record * self.sampling_rate) - 300]
 
@@ -47,12 +47,52 @@ class BaseStructure:
 
         self.fig, self.ax = plt.subplots(*self.view[self.view_condition])
         self.set_limits()
+        self.set_ecg()
+
+        ax_sample_prev = self.fig.add_axes([0.3, 0.05, 0.1, 0.075])
+        ax_sample_next = self.fig.add_axes([0.4, 0.05, 0.1, 0.075])
+
+        button_sample_next = Button(ax_sample_next, "sample >>")
+        button_sample_prev = Button(ax_sample_prev, "sample <<")
+
+        # Connect prev and next buttons to callback function
+        button_sample_next.on_clicked(self.change_sample_next)
+        button_sample_prev.on_clicked(self.change_sample_prev)
 
         plt.show()
 
     def set_limits(self):
         for ax in self.ax.ravel():
             ax.set_xlim(self.x_limit)
+
+    def set_ecg(self):
+        for lead, ax in enumerate(self.ax.ravel()):
+            ax.plot(self.ecg_matrix[lead])
+
+    def set_clean(self):
+        for ax in self.ax.ravel():
+            ax.cla()
+            self.set_limits()
+
+    def change_sample_next(self, event):
+        self.sample_number += 1
+        i = self.sample_number % self.quantity_samples
+        self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
+
+        self.set_clean()
+        self.set_ecg()
+
+        plt.draw()
+
+    def change_sample_prev(self, event):
+        self.sample_number -= 1
+        i = self.sample_number % self.quantity_samples
+        self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
+
+        self.set_clean()
+        self.set_ecg()
+
+        plt.draw()
 
 
 if __name__ == "__main__":
