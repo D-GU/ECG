@@ -2,26 +2,6 @@ import numpy as np
 import scipy.signal
 
 from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_filter, ecg_quality
-from pandas import DataFrame, Series
-
-
-def get_clean_signal(_signal, _sampling_rate):
-    # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
-
-    # Apply lowpass filter
-    _cleaned = signal_filter(
-        signal=_signal, sampling_rate=_sampling_rate, lowcut=0.5, method="butterworth", order=5
-    )
-
-    _cleaned = signal_filter(
-        signal=_cleaned, sampling_rate=_sampling_rate, highcut=10, method="butterworth", order=5
-    )
-
-    _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
-
-    return _cleaned
-
-
 def preprocess(_ecg_signal, _sampling_rate):
     """
     Processing the signal to get first pieces of data to analyze
@@ -56,6 +36,27 @@ def preprocess(_ecg_signal, _sampling_rate):
     _info = _r_peaks
 
     return _signals, _info
+
+
+def get_clean_signal(_signal, _sampling_rate):
+    # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
+    _cleaned = -scipy.signal.cubic(_signal)
+
+    # Apply lowpass filter
+    _cleaned = signal_filter(
+        signal=_cleaned, sampling_rate=_sampling_rate, lowcut=0.55, method="butterworth", order=5
+    )
+
+    _cleaned = signal_filter(
+        signal=_cleaned, sampling_rate=_sampling_rate, highcut=15, method="butterworth", order=5
+    )
+
+    _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
+
+    return _cleaned
+
+
+from pandas import DataFrame, Series
 
 
 def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):
