@@ -1,8 +1,10 @@
 import matplotlib.pyplot as plt
+import neurokit2
 import pandas as pd
 import numpy as np
 import wfdb
 
+import functions
 from visual_representation import Visualizer
 from typing import Union, List, Tuple
 
@@ -269,13 +271,13 @@ signals, samples = get_full_ecg(sample_num)  # Get sample
 sample = signals[:, LEADS.index("iii")]  # Get lead
 
 # get data
-visualize_sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=sample)
-visualize_sample.visualizer()
+# visualize_sample = Visualizer(sampling_rate=500, seconds=10, recording_speed=25, signal=sample)
+# visualize_sample.visualizer()
 
 # Get intervals
-p = visualize_sample.get_peaks()[2]["ECG_P_Peaks"]
+# p = visualize_sample.get_peaks()[2]["ECG_P_Peaks"]
 # Get the LUDB QRS len data
-x = EGCSignal.from_index_and_lead(sample_num, LEADS[5]).plot_with_segments()["p"]
+# x = EGCSignal.from_index_and_lead(sample_num, LEADS[5]).plot_with_segments()["p"]
 
 # Искомая величина - длина отрезка
 # len = end - start
@@ -292,12 +294,32 @@ x = EGCSignal.from_index_and_lead(sample_num, LEADS[5]).plot_with_segments()["p"
 #     print(f"\nОтносительная погрешность: {relative_error * 100:.3f} % \n"
 #           f"Абсолютная погреность: {absolute_error * 100:.3f} %")
 
-errors = []
-for peak, (start, end, symbol) in zip(p[1:7], x):
-    delta = (np.abs(symbol - peak) / peak) * 100
-    errors.append(delta)
-    print(f"Относительная погрешность положения пиков: {delta:.3f}%")
+# errors = []
+# for peak, (start, end, symbol) in zip(p[1:7], x):
+#     delta = (np.abs(symbol - peak) / peak) * 100
+#     errors.append(delta)
+#     print(f"Относительная погрешность положения пиков: {delta:.3f}%")
+#
+# errors = np.array(errors)
+# print(f"Средняя относительная погрешность: {errors.mean():.3f}%")
+# plt.show()
 
-errors = np.array(errors)
-print(f"Средняя относительная погрешность: {errors.mean():.3f}%")
+ecg_file = np.load("ecg_ptbxl.npy", allow_pickle=True)
+
+ecg_sample = ecg_file[100][:, 2]
+ecg_clean_nk = neurokit2.ecg_clean(ecg_sample, sampling_rate=100)
+ecg_clean_my = functions.get_clean_signal(ecg_sample, _sampling_rate=100)
+
+ecg_matrix = np.array([ecg_file[100][:, i] for i in range(12)])
+ecg_matrix = ecg_matrix
+u, s, v = np.linalg.svd(ecg_matrix, full_matrices=False)
+
+plt.plot(functions.get_clean_signal(ecg_file[100][:, 0], _sampling_rate=100), "red")
+plt.plot(functions.get_clean_signal(v[0], _sampling_rate=100), "green")
+# ecg_matrix = ecg_matrix.T
+
+# plt.plot(ecg_sample, color="red")
+# plt.plot(ecg_clean_nk, color="blue")
+# plt.plot(ecg_clean_my, color="green")
+
 plt.show()
