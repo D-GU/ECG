@@ -67,7 +67,8 @@ class BaseStructure:
 
     def set_ecg(self):
         for lead, ax in enumerate(self.ax.ravel()):
-            ax.plot(self.ecg_matrix[lead])
+            _, _, v = np.linalg.svd(self.ecg_matrix, full_matrices=False)
+            ax.plot(functions.get_clean_signal(v[lead], _sampling_rate=self.sampling_rate))
 
     def set_clean(self):
         for ax in self.ax.ravel():
