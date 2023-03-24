@@ -71,19 +71,24 @@ class BaseStructure:
             ax.set_xlim(self.x_limit)
 
     def set_ecg(self):
-        # _, _, V = np.linalg.svd(self.ecg_matrix, full_matrices=False)
+        _, _, V = np.linalg.svd(self.ecg_matrix[3:5], full_matrices=False)
         self.ecg_matrix = functions.get_clean_matrix(self.ecg_matrix, self.sampling_rate)
 
-        # for x in range(6):
-        #     self.ax[x][0].plot(functions.get_clean_signal(self.ecg_matrix[x % 12], _sampling_rate=self.sampling_rate))
-        #     self.ax[x][1].plot(functions.get_clean_signal(self.ecg_matrix[x], _sampling_rate=self.sampling_rate))
+        # If need to delete motion noise
+        # for e, v in zip((3, 4, 5), (0, 1, 2)):
+        #     self.ecg_matrix[e] = V[v]
 
         if not self.view_condition:
-            for x in range(self.view[self.view_condition][0]):
-                for y in range(self.view[self.view_condition][1]):
-                    self.ax[x][y].plot(self.ecg_matrix[self.view_settings[self.view_condition][x][y]])
-                    self.ax[x][y].axhline(
-                        y=self.ecg_matrix[self.view_settings[self.view_condition][x][y]][0], color='g', linestyle="-"
+            for rows in range(self.view[self.view_condition][0]):
+                for cols in range(self.view[self.view_condition][1]):
+                    self.ax[rows][cols].plot(
+                        self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]]
+                    )
+
+                    self.ax[rows][cols].axhline(
+                        y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]][0],
+                        color='g',
+                        linestyle="-"
                     )
         else:
             for lead, ax in enumerate(self.ax.ravel()):
@@ -96,8 +101,7 @@ class BaseStructure:
             self.set_limits()
 
     def change_sample_next(self, event):
-        self.sample_number += 1
-        i = self.sample_number % self.quantity_samples
+        self.sample_number = (self.sample_number + 1) % self.quantity_samples
         self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
 
         self.set_clean()
@@ -106,8 +110,7 @@ class BaseStructure:
         plt.draw()
 
     def change_sample_prev(self, event):
-        self.sample_number -= 1
-        i = self.sample_number % self.quantity_samples
+        self.sample_number = (self.sample_number + 1) % self.quantity_samples
         self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
 
         self.set_clean()
