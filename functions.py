@@ -1,7 +1,12 @@
+import neurokit2
 import numpy as np
 import scipy.signal
 
+from biosppy.signals.tools import phase_locking, filter_signal
 from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_filter, ecg_quality
+from pandas import DataFrame, Series
+
+
 def preprocess(_ecg_signal, _sampling_rate):
     """
     Processing the signal to get first pieces of data to analyze
@@ -40,23 +45,38 @@ def preprocess(_ecg_signal, _sampling_rate):
 
 def get_clean_signal(_signal, _sampling_rate):
     # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
-    _cleaned = -scipy.signal.cubic(_signal)
+
+    _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
 
     # Apply lowpass filter
-    _cleaned = signal_filter(
-        signal=_cleaned, sampling_rate=_sampling_rate, lowcut=0.55, method="butterworth", order=5
-    )
+    # _cleaned = signal_filter(
+    #     signal=_cleaned, sampling_rate=_sampling_rate, lowcut=0.55, method="butterworth", order=5
+    # )
+    #
+    # _cleaned = signal_filter(
+    #     signal=_cleaned, sampling_rate=_sampling_rate, highcut=15, method="butterworth", order=5
+    # )
+    #
+    # _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
 
-    _cleaned = signal_filter(
-        signal=_cleaned, sampling_rate=_sampling_rate, highcut=15, method="butterworth", order=5
-    )
+    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=0.05, band="lowpass")[0]
+    _cleaned = -scipy.signal.cubic(_cleaned)
+    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=10, band="highpass")[0]
+    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=10, band="highpass")[0]
 
-    _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
+    _instant_peaks, _r_peaks = ecg_peaks(_cleaned, sampling_rate=_sampling_rate)
+
+    m = ecg_quality(_cleaned, rpeaks=_r_peaks["ECG_R_Peaks"], method="zhao2018", sampling_rate=_sampling_rate)
+    # print(m)
 
     return _cleaned
 
 
-from pandas import DataFrame, Series
+def get_clean_matrix(_matrix, _sampling_rate):
+    for lead in range(12):
+        _matrix[lead] = get_clean_signal(_matrix[lead], _sampling_rate)
+
+    return _matrix
 
 
 def get_intervals(_x_peaks: np.array, _interval_name: str, *_y_peaks: np.array):

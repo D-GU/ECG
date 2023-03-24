@@ -22,7 +22,7 @@ class ECGCleaner:
 
 class BaseStructure:
     def __init__(self, database, sampling_rate, recording_speed, recording_time):
-        self.sample_number = 101
+        self.sample_number = 0
         self.data = database
         self.quantity_samples = database.shape[0]
         self.leads_quantity = 12
@@ -39,7 +39,7 @@ class BaseStructure:
         # Set ecg channels as a matrix
         self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
 
-        self.x_limit = [150, (self.time_of_record * self.sampling_rate) - 300]
+        self.x_limit = [400, (self.time_of_record * self.sampling_rate) - 200]
 
         self.lead_names = [
             "i", "ii", "iii", "aVF", "aVR", "aVL", "V1", "V2", "V3", "V4", "V5", "V6"
@@ -66,9 +66,31 @@ class BaseStructure:
             ax.set_xlim(self.x_limit)
 
     def set_ecg(self):
+        # _, _, V = np.linalg.svd(self.ecg_matrix, full_matrices=False)
+        self.ecg_matrix = functions.get_clean_matrix(self.ecg_matrix, self.sampling_rate)
+
+        # for x in range(6):
+        #     self.ax[x][0].plot(functions.get_clean_signal(self.ecg_matrix[x % 12], _sampling_rate=self.sampling_rate))
+        #     self.ax[x][1].plot(functions.get_clean_signal(self.ecg_matrix[x], _sampling_rate=self.sampling_rate))
+
+        self.ax[0][0].plot(self.ecg_matrix[0])
+        self.ax[0][1].plot(self.ecg_matrix[6])
+        self.ax[1][0].plot(self.ecg_matrix[1])
+        self.ax[1][1].plot(self.ecg_matrix[7])
+        self.ax[2][0].plot(self.ecg_matrix[2])
+        self.ax[2][1].plot(self.ecg_matrix[8])
+        self.ax[3][0].plot(self.ecg_matrix[3])
+        self.ax[3][1].plot(self.ecg_matrix[9])
+        self.ax[4][0].plot(self.ecg_matrix[4])
+        self.ax[4][1].plot(self.ecg_matrix[10])
+        self.ax[5][0].plot(self.ecg_matrix[5])
+        self.ax[5][1].plot(self.ecg_matrix[11])
+
         for lead, ax in enumerate(self.ax.ravel()):
-            _, _, V = np.linalg.svd(self.ecg_matrix, full_matrices=False)
-            ax.plot(functions.get_clean_signal(V[lead], _sampling_rate=self.sampling_rate))
+            if lead == 3 or lead == 4:
+                ax.axhline(y=-self.ecg_matrix[lead][0], color='g', linestyle='-')
+            else:
+                ax.axhline(y=self.ecg_matrix[lead][0], color='g', linestyle='-')
 
     def set_clean(self):
         for ax in self.ax.ravel():

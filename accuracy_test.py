@@ -314,8 +314,9 @@ ecg_matrix = np.array([ecg_file[100][:, i] for i in range(12)])
 ecg_matrix = ecg_matrix
 u, s, v = np.linalg.svd(ecg_matrix, full_matrices=False)
 
+plt.plot(ecg_file[100][:, 0], "green")
 plt.plot(functions.get_clean_signal(ecg_file[100][:, 0], _sampling_rate=100), "red")
-plt.plot(functions.get_clean_signal(v[0], _sampling_rate=100), "green")
+# plt.plot(functions.get_clean_signal(-v[0], _sampling_rate=100), "green")
 # ecg_matrix = ecg_matrix.T
 
 # plt.plot(ecg_sample, color="red")
