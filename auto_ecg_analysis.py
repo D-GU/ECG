@@ -36,6 +36,11 @@ class BaseStructure:
             1: (12, 1)
         }
 
+        self.view_settings = {
+            0: ((0, 6), (1, 7), (2, 8), (3, 9), (4, 10), (5, 11)),
+            1: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
+        }
+
         # Set ecg channels as a matrix
         self.ecg_matrix = np.array([self.data[self.sample_number][:, i] for i in range(12)])
 
@@ -73,24 +78,17 @@ class BaseStructure:
         #     self.ax[x][0].plot(functions.get_clean_signal(self.ecg_matrix[x % 12], _sampling_rate=self.sampling_rate))
         #     self.ax[x][1].plot(functions.get_clean_signal(self.ecg_matrix[x], _sampling_rate=self.sampling_rate))
 
-        self.ax[0][0].plot(self.ecg_matrix[0])
-        self.ax[0][1].plot(self.ecg_matrix[6])
-        self.ax[1][0].plot(self.ecg_matrix[1])
-        self.ax[1][1].plot(self.ecg_matrix[7])
-        self.ax[2][0].plot(self.ecg_matrix[2])
-        self.ax[2][1].plot(self.ecg_matrix[8])
-        self.ax[3][0].plot(self.ecg_matrix[3])
-        self.ax[3][1].plot(self.ecg_matrix[9])
-        self.ax[4][0].plot(self.ecg_matrix[4])
-        self.ax[4][1].plot(self.ecg_matrix[10])
-        self.ax[5][0].plot(self.ecg_matrix[5])
-        self.ax[5][1].plot(self.ecg_matrix[11])
-
-        for lead, ax in enumerate(self.ax.ravel()):
-            if lead == 3 or lead == 4:
-                ax.axhline(y=-self.ecg_matrix[lead][0], color='g', linestyle='-')
-            else:
-                ax.axhline(y=self.ecg_matrix[lead][0], color='g', linestyle='-')
+        if not self.view_condition:
+            for x in range(self.view[self.view_condition][0]):
+                for y in range(self.view[self.view_condition][1]):
+                    self.ax[x][y].plot(self.ecg_matrix[self.view_settings[self.view_condition][x][y]])
+                    self.ax[x][y].axhline(
+                        y=self.ecg_matrix[self.view_settings[self.view_condition][x][y]][0], color='g', linestyle="-"
+                    )
+        else:
+            for lead, ax in enumerate(self.ax.ravel()):
+                ax.plot(self.ecg_matrix[lead])
+                ax.axhline(y=self.ecg_matrix[lead][0], color="g", linestyle="-")
 
     def set_clean(self):
         for ax in self.ax.ravel():
