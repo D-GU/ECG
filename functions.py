@@ -2,9 +2,10 @@ import neurokit2
 import numpy as np
 import scipy.signal
 
-from biosppy.signals.tools import phase_locking, filter_signal
-from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, signal_filter, ecg_quality
+from biosppy.signals.tools import filter_signal
+from neurokit2 import ecg_peaks, ecg_delineate, ecg_clean, ecg_quality
 from pandas import DataFrame, Series
+from biosppy.signals.tools import get_filter
 
 
 def preprocess(_ecg_signal, _sampling_rate):
@@ -46,7 +47,7 @@ def preprocess(_ecg_signal, _sampling_rate):
 def get_clean_signal(_signal, _sampling_rate):
     # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
 
-    _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
+    _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate, method="biosppy")
 
     # Apply lowpass filter
     # _cleaned = signal_filter(
@@ -59,17 +60,23 @@ def get_clean_signal(_signal, _sampling_rate):
     #
     # _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
 
-    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=0.05, band="lowpass")[0]
-    _cleaned = -scipy.signal.cubic(_cleaned)
-    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=10, band="highpass")[0]
-    _cleaned = filter_signal(signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=10, band="highpass")[0]
+    _cleaned = filter_signal(
+        signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=0.3, band="lowpass"
+    )[0]
 
-    _instant_peaks, _r_peaks = ecg_peaks(_cleaned, sampling_rate=_sampling_rate)
+    _cleaned += scipy.signal.quadratic(_cleaned)
 
-    m = ecg_quality(_cleaned, rpeaks=_r_peaks["ECG_R_Peaks"], method="zhao2018", sampling_rate=_sampling_rate)
-    # print(m)
+    _cleaned += filter_signal(
+        signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=8, band="highpass"
+    )[0]
 
-    return _cleaned
+    # _instant_peaks, _r_peaks = ecg_peaks(_cleaned, sampling_rate=_sampling_rate)
+
+    # quality = ecg_quality(_cleaned, rpeaks=_r_peaks["ECG_R_Peaks"], method="zhao2018", sampling_rate=_sampling_rate)
+
+    # print(quality)
+
+    return _signal
 
 
 def get_clean_matrix(_matrix, _sampling_rate):
