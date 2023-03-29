@@ -70,15 +70,57 @@ class AppECG:
             )
         )
 
-        self.update_plots()
+        self.make_plots()
 
         self.app = dash.Dash()
 
         self.app.layout = html.Div([
-            dcc.Graph(figure=self.fig)
+            html.H3("ECG"),
+            dcc.Dropdown(
+                id="drop",
+                options=[
+                    {"label": i, "value": i} for i in range(self.quantity_samples)
+                ],
+                value=0
+            ),
+            dcc.Graph(figure=self.fig, id="ecg_layout")
         ])
 
-    def update_plots(self):
+        @self.app.callback(
+            Output(component_id="ecg_layout", component_property="figure"),
+            [Input(component_id="drop", component_property="value")]
+        )
+        def updater(value):
+            selected_value = value
+            self.sample_number = selected_value
+
+            for rows in range(self.view[self.view_condition][0]):
+                for cols in range(self.view[self.view_condition][1]):
+                    # self.fig.add_trace(
+                    #     go.Scatter(
+                    #         x=[i for i in range(1000)],
+                    #         y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
+                    #         name=f"{self.view_settings[self.view_condition][rows][cols]}",
+                    #         fillcolor="gray"
+                    #     ),
+                    #     row=rows + 1, col=cols + 1
+                    # )\
+
+                    return {
+                        "fig": self.fig.update_traces(
+                            data=go.Figure(data=[go.Scatter(
+                                x=[i for i in range(1000)],
+                                y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
+                                name=f"{self.view_settings[self.view_condition][rows][cols]}",
+                                fillcolor="gray"
+
+                            )]
+                            ))
+                    }
+
+            return self.fig
+
+    def make_plots(self):
         if not self.view_condition:
             for rows in range(self.view[self.view_condition][0]):
                 for cols in range(self.view[self.view_condition][1]):
@@ -106,6 +148,9 @@ class AppECG:
         self.fig.update_layout(xaxis12=dict(range=self.range))
 
         self.fig.update_layout(height=950, width=1500)
+
+    def update_sample(self):
+        ...
 
 
 if __name__ == "__main__":

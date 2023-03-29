@@ -1,102 +1,63 @@
-import plotly.graph_objects as go
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.animation as animation
+from time import sleep
+from matplotlib.backend_bases import MouseButton
 
-import pandas as pd
+val1 = np.zeros(100)
+val2 = np.zeros(100)
 
-# Load dataset
-df = pd.read_csv(
-    "https://raw.githubusercontent.com/plotly/datasets/master/finance-charts-apple.csv")
-df.columns = [col.replace("AAPL.", "") for col in df.columns]
+level1 = 0.2
+level2 = 0.5
 
-# Initialize figure
-fig = go.Figure()
+fig, ax = plt.subplots()
 
-# Add Traces
+ax1 = plt.subplot2grid((2, 1), (0, 0))
+lineVal1, = ax1.plot(np.zeros(100))
+ax1.set_ylim(-0.5, 1.5)
 
-fig.add_trace(
-    go.Scatter(x=list(df.index),
-               y=list(df.High),
-               name="High",
-               line=dict(color="#33CFA5")))
+ax2 = plt.subplot2grid((2, 1), (1, 0))
+lineVal2, = ax2.plot(np.zeros(100), color="r")
+ax2.set_ylim(-0.5, 1.5)
 
-fig.add_trace(
-    go.Scatter(x=list(df.index),
-               y=[df.High.mean()] * len(df.index),
-               name="High Average",
-               visible=False,
-               line=dict(color="#33CFA5", dash="dash")))
+axvline1 = ax1.axvline(x=0., color="k")
+axvline2 = ax2.axvline(x=0., color="k")
 
-fig.add_trace(
-    go.Scatter(x=list(df.index),
-               y=list(df.Low),
-               name="Low",
-               line=dict(color="#F06A6A")))
 
-fig.add_trace(
-    go.Scatter(x=list(df.index),
-               y=[df.Low.mean()] * len(df.index),
-               name="Low Average",
-               visible=False,
-               line=dict(color="#F06A6A", dash="dash")))
+def onMouseMove(event):
+    axvline1.set_data([event.xdata, event.xdata], [0, 1])
+    axvline2.set_data([event.xdata, event.xdata], [0, 1])
 
-# Add Annotations and Buttons
-high_annotations = [dict(x="2016-03-01",
-                         y=df.High.mean(),
-                         xref="x", yref="y",
-                         text="High Average:<br> %.2f" % df.High.mean(),
-                         ax=0, ay=-40),
-                    dict(x=df.High.idxmax(),
-                         y=df.High.max(),
-                         xref="x", yref="y",
-                         text="High Max:<br> %.2f" % df.High.max(),
-                         ax=0, ay=-40)]
-low_annotations = [dict(x="2015-05-01",
-                        y=df.Low.mean(),
-                        xref="x", yref="y",
-                        text="Low Average:<br> %.2f" % df.Low.mean(),
-                        ax=-40, ay=40),
-                   dict(x=df.High.idxmin(),
-                        y=df.Low.min(),
-                        xref="x", yref="y",
-                        text="Low Min:<br> %.2f" % df.Low.min(),
-                        ax=0, ay=40)]
 
-fig.update_layout(
-    updatemenus=[
-        dict(
-            type="buttons",
-            direction="right",
-            active=0,
-            x=0.57,
-            y=1.2,
-            buttons=list([
-                dict(label="None",
-                     method="update",
-                     args=[{"visible": [True, False, True, False]},
-                           {"title": "Yahoo",
-                            "annotations": []}]),
-                dict(label="High",
-                     method="update",
-                     args=[{"visible": [True, True, False, False]},
-                           {"title": "Yahoo High",
-                            "annotations": high_annotations}]),
-                dict(label="Low",
-                     method="update",
-                     args=[{"visible": [False, False, True, True]},
-                           {"title": "Yahoo Low",
-                            "annotations": low_annotations}]),
-                dict(label="Both",
-                     method="update",
-                     args=[{"visible": [True, True, True, True]},
-                           {"title": "Yahoo",
-                            "annotations": high_annotations + low_annotations}]),
-            ]),
-        )
-    ])
+def onMouseClick(event):
+    if event.inaxis == axvline1.axis and event.button is MouseButton.LEFT:
+        print(1)
 
-# Set title
-fig.update_layout(
-    title_text="Yahoo",
-    xaxis_domain=[0.05, 1.0]
-)
 
-fig.show()
+def updateData():
+    global level1, val1
+    global level2, val2
+
+    clamp = lambda n, minn, maxn: max(min(maxn, n), minn)
+
+    level1 = clamp(level1 + (np.random.random() - .5) / 20.0, 0.0, 1.0)
+    level2 = clamp(level2 + (np.random.random() - .5) / 10.0, 0.0, 1.0)
+
+    # values are appended to the respective arrays which keep the last 100 readings
+    val1 = np.append(val1, level1)[-100:]
+    val2 = np.append(val2, level2)[-100:]
+
+    yield 1  # FuncAnimation expects an iterator
+
+
+def visualize(i):
+    lineVal1.set_ydata(val1)
+    lineVal2.set_ydata(val2)
+
+    return lineVal1, lineVal2
+
+
+fig.canvas.mpl_connect('motion_notify_event', onMouseMove)
+fig.canvas.mpl_connect("button_press_event", onMouseClick)
+ani = animation.FuncAnimation(fig, visualize, updateData, interval=50)
+plt.show()
