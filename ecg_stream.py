@@ -23,9 +23,7 @@ class AppECG:
         self.sample_number = 0
         self.quantity_samples = data.shape[0]
 
-        self.ecg_matrix = fns.get_clean_matrix(
-            np.array([self.data[self.sample_number][:, i] for i in range(12)]), self.sampling_rate
-        )
+        self.ecg_matrix = self.update_matrix()
 
         self.view = {
             0: (6, 2),
@@ -81,7 +79,8 @@ class AppECG:
                 options=[
                     {"label": i, "value": i} for i in range(self.quantity_samples)
                 ],
-                value=0
+                # multi=True,
+                value=self.sample_number
             ),
             dcc.Graph(figure=self.fig, id="ecg_layout")
         ])
@@ -94,31 +93,27 @@ class AppECG:
             selected_value = value
             self.sample_number = selected_value
 
+            self.ecg_matrix = self.update_matrix()
+
             for rows in range(self.view[self.view_condition][0]):
                 for cols in range(self.view[self.view_condition][1]):
-                    # self.fig.add_trace(
-                    #     go.Scatter(
-                    #         x=[i for i in range(1000)],
-                    #         y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
-                    #         name=f"{self.view_settings[self.view_condition][rows][cols]}",
-                    #         fillcolor="gray"
-                    #     ),
-                    #     row=rows + 1, col=cols + 1
-                    # )\
+                    self.fig.update_traces(
+                        patch=go.Scatter(
+                            x=[i for i in range(1000)],
+                            y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
+                            name=f"{self.view_settings[self.view_condition][rows][cols]}",
+                            fillcolor="red"
+                        ),
 
-                    return {
-                        "fig": self.fig.update_traces(
-                            data=go.Figure(data=[go.Scatter(
-                                x=[i for i in range(1000)],
-                                y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
-                                name=f"{self.view_settings[self.view_condition][rows][cols]}",
-                                fillcolor="gray"
-
-                            )]
-                            ))
-                    }
+                        row=rows + 1, col=cols + 1,
+                    )
 
             return self.fig
+
+    def update_matrix(self):
+        return fns.get_clean_matrix(
+            np.array([self.data[self.sample_number][:, i] for i in range(12)]), self.sampling_rate
+        )
 
     def make_plots(self):
         if not self.view_condition:
