@@ -74,12 +74,12 @@ class AppECG:
 
         self.app.layout = html.Div([
             html.H3("ECG"),
+
             dcc.Dropdown(
                 id="drop",
                 options=[
                     {"label": i, "value": i} for i in range(self.quantity_samples)
                 ],
-                # multi=True,
                 value=self.sample_number
             ),
             dcc.Graph(figure=self.fig, id="ecg_layout")
@@ -87,7 +87,9 @@ class AppECG:
 
         @self.app.callback(
             Output(component_id="ecg_layout", component_property="figure"),
-            [Input(component_id="drop", component_property="value")]
+
+            [Input(component_id="drop", component_property="value"),
+             ]
         )
         def updater(value):
             selected_value = value
@@ -102,11 +104,10 @@ class AppECG:
                             x=[i for i in range(1000)],
                             y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
                             name=f"{self.view_settings[self.view_condition][rows][cols]}",
-                            fillcolor="red"
                         ),
-
                         row=rows + 1, col=cols + 1,
                     )
+
 
             return self.fig
 
@@ -128,7 +129,6 @@ class AppECG:
                         ),
                         row=rows + 1, col=cols + 1
                     )
-
         self.fig.update_layout(xaxis1=dict(range=self.range))
         self.fig.update_layout(xaxis2=dict(range=self.range))
         self.fig.update_layout(xaxis3=dict(range=self.range))
@@ -143,9 +143,6 @@ class AppECG:
         self.fig.update_layout(xaxis12=dict(range=self.range))
 
         self.fig.update_layout(height=950, width=1500)
-
-    def update_sample(self):
-        ...
 
 
 if __name__ == "__main__":
