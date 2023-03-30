@@ -6,6 +6,8 @@ import plotly.graph_objects as go
 import plotly.io
 import dash
 import dash_bootstrap_components as dbc
+import plotly.express as px
+import json
 
 from dash.dependencies import Input, Output
 from dash import dcc
@@ -22,7 +24,6 @@ class AppECG:
         self.view_condition = 0
         self.sample_number = 0
         self.quantity_samples = data.shape[0]
-
         self.ecg_matrix = self.update_matrix()
 
         self.view = {
@@ -64,9 +65,13 @@ class AppECG:
                 self.lead_names[10],
                 self.lead_names[5],
                 self.lead_names[11]
-
             )
         )
+
+        self.line_position = self.range[0]
+
+        self.last_marked_lead = None
+        self.last_marked_lead_xy = None
 
         self.make_plots()
 
@@ -82,16 +87,33 @@ class AppECG:
                 ],
                 value=self.sample_number
             ),
-            dcc.Graph(figure=self.fig, id="ecg_layout")
+
+            dcc.Slider(
+                id="slider",
+                min=self.range[0], max=self.range[1],
+                value=self.range[0] + 1,
+                step=0.1
+            ),
+
+            dcc.Graph(
+                figure=self.fig,
+                id="ecg_layout"
+            ),
+
+            dash.html.Div(
+                id="where"
+            )
         ])
 
         @self.app.callback(
             Output(component_id="ecg_layout", component_property="figure"),
-
-            [Input(component_id="drop", component_property="value"),
-             ]
+            [
+                Input(component_id="drop", component_property="value"),
+                Input(component_id="slider", component_property="value"),
+                Input(component_id="ecg_layout", component_property="clickData")
+            ]
         )
-        def updater(value):
+        def visual_updater(value, pos_x, clickData):
             selected_value = value
             self.sample_number = selected_value
 
@@ -108,8 +130,49 @@ class AppECG:
                         row=rows + 1, col=cols + 1,
                     )
 
+            if not clickData:
+                raise dash.exceptions.PreventUpdate
+
+            self.last_marked_lead = json.loads(
+                json.dumps(
+                    {k: clickData["points"][0][k] for k in ["curveNumber"]}
+                )
+            )["curveNumber"]
+
+            self.last_marked_lead_xy = json.loads(
+                json.dumps(
+                    {k: clickData["points"][0][k] for k in ["x", "y"]}
+                )
+            )
+
+            temp_row, temp_col = self.get_graph_component_coord()
+            print(self.last_marked_lead, temp_row, temp_col)
+            temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead])
+
+            self.fig.update_traces(
+                go.Scatter(
+                    mode='markers',
+                    x=[self.last_marked_lead_xy["x"]],
+                    y=[self.last_marked_lead_xy["y"]],
+                    marker=dict(
+                        color='LightSkyBlue',
+                        size=20,
+                        line=dict(
+                            color='MediumPurple',
+                            width=2
+                        )
+                    ),
+                    showlegend=False
+                ),
+                row=temp_row + 1, col=temp_col + 1
+            )
 
             return self.fig
+
+    def get_graph_component_coord(self):
+        for number, component in enumerate(self.view_settings[0]):
+            if any(num == self.last_marked_lead for num in component):
+                return number, component.index(self.last_marked_lead)
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -129,6 +192,7 @@ class AppECG:
                         ),
                         row=rows + 1, col=cols + 1
                     )
+
         self.fig.update_layout(xaxis1=dict(range=self.range))
         self.fig.update_layout(xaxis2=dict(range=self.range))
         self.fig.update_layout(xaxis3=dict(range=self.range))
