@@ -65,7 +65,7 @@ class AppECG:
                 self.lead_names[10],
                 self.lead_names[5],
                 self.lead_names[11]
-            )
+            ),
         )
 
         self.line_position = self.range[0]
@@ -88,12 +88,12 @@ class AppECG:
                 value=self.sample_number
             ),
 
-            dcc.Slider(
-                id="slider",
-                min=self.range[0], max=self.range[1],
-                value=self.range[0] + 1,
-                step=0.1
-            ),
+            # dcc.Slider(
+            #     id="slider",
+            #     min=self.range[0], max=self.range[1],
+            #     value=self.range[0] + 1,
+            #     step=0.1
+            # ),
 
             dcc.Graph(
                 figure=self.fig,
@@ -109,11 +109,10 @@ class AppECG:
             Output(component_id="ecg_layout", component_property="figure"),
             [
                 Input(component_id="drop", component_property="value"),
-                Input(component_id="slider", component_property="value"),
                 Input(component_id="ecg_layout", component_property="clickData")
             ]
         )
-        def visual_updater(value, pos_x, clickData):
+        def visual_updater(value, clickData):
             selected_value = value
             self.sample_number = selected_value
 
@@ -127,52 +126,57 @@ class AppECG:
                             y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
                             name=f"{self.view_settings[self.view_condition][rows][cols]}",
                         ),
-                        row=rows + 1, col=cols + 1,
+                        row=rows - 1, col=cols,
                     )
 
             if not clickData:
-                raise dash.exceptions.PreventUpdate
+                ...
+            else:
+                self.last_marked_lead = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["curveNumber"]}
+                    )
+                )["curveNumber"]
 
-            self.last_marked_lead = json.loads(
-                json.dumps(
-                    {k: clickData["points"][0][k] for k in ["curveNumber"]}
+                self.last_marked_lead_xy = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["x", "y"]}
+                    )
                 )
-            )["curveNumber"]
 
-            self.last_marked_lead_xy = json.loads(
-                json.dumps(
-                    {k: clickData["points"][0][k] for k in ["x", "y"]}
-                )
-            )
-
-            temp_row, temp_col = self.get_graph_component_coord()
-            print(self.last_marked_lead, temp_row, temp_col)
-            temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead])
-
-            self.fig.update_traces(
-                go.Scatter(
-                    mode='markers',
-                    x=[self.last_marked_lead_xy["x"]],
-                    y=[self.last_marked_lead_xy["y"]],
-                    marker=dict(
-                        color='LightSkyBlue',
-                        size=20,
-                        line=dict(
-                            color='MediumPurple',
-                            width=2
-                        )
+                if self.last_marked_lead & 0x1:
+                    temp_col = 2
+                else:
+                    temp_col = 1
+                print(f"Last marked lead: {self.last_marked_lead}")
+                temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
+                print(f"Temp row: {temp_row + 1}")
+                self.fig.add_trace(
+                    go.Marker(
+                        x=[self.last_marked_lead_xy["x"]],
+                        y=[self.last_marked_lead_xy["y"]],
                     ),
-                    showlegend=False
-                ),
-                row=temp_row + 1, col=temp_col + 1
-            )
+                    row=temp_row + 1, col=temp_col,
+                )
+                # self.fig.update_traces(
+                #     go.Scatter(
+                #         mode='markers',
+                #         x=[self.last_marked_lead_xy["x"]],
+                #         y=[self.last_marked_lead_xy["y"]],
+                #         marker=dict(
+                #             color='LightSkyBlue',
+                #             size=20,
+                #             line=dict(
+                #                 color='MediumPurple',
+                #                 width=2
+                #             )
+                #         ),
+                #         showlegend=False
+                #     ),
+                #     row=temp_row, col=temp_col
+                # )
 
             return self.fig
-
-    def get_graph_component_coord(self):
-        for number, component in enumerate(self.view_settings[0]):
-            if any(num == self.last_marked_lead for num in component):
-                return number, component.index(self.last_marked_lead)
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -180,6 +184,7 @@ class AppECG:
         )
 
     def make_plots(self):
+        traces = []
         if not self.view_condition:
             for rows in range(self.view[self.view_condition][0]):
                 for cols in range(self.view[self.view_condition][1]):
