@@ -8,10 +8,11 @@ import dash
 import dash_bootstrap_components as dbc
 import plotly.express as px
 import json
+import panel as pn
 
 from dash.dependencies import Input, Output
 from dash import dcc
-from dash import html
+from dash import html, ClientsideFunction
 from plotly.subplots import make_subplots
 
 
@@ -66,6 +67,8 @@ class AppECG:
                 self.lead_names[5],
                 self.lead_names[11]
             ),
+
+            shared_xaxes=True
         )
 
         self.line_position = self.range[0]
@@ -97,10 +100,10 @@ class AppECG:
 
             dcc.Graph(
                 figure=self.fig,
-                id="ecg_layout"
+                id="ecg_layout",
             ),
 
-            dash.html.Div(
+            html.Div(
                 id="where"
             )
         ])
@@ -151,31 +154,13 @@ class AppECG:
 
                 temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
 
-                self.fig.update_annotations(
+                self.fig.add_annotation(
                     go.Marker(
                         x=[self.last_marked_lead_xy["x"]],
                         y=[self.last_marked_lead_xy["y"]],
                     ),
                     row=temp_row + 1, col=temp_col,
                 )
-
-                # self.fig.update_traces(
-                #     go.Scatter(
-                #         mode='markers',
-                #         x=[self.last_marked_lead_xy["x"]],
-                #         y=[self.last_marked_lead_xy["y"]],
-                #         marker=dict(
-                #             color='LightSkyBlue',
-                #             size=20,
-                #             line=dict(
-                #                 color='MediumPurple',
-                #                 width=2
-                #             )
-                #         ),
-                #         showlegend=False
-                #     ),
-                #     row=temp_row, col=temp_col
-                # )
 
             return self.fig
 
@@ -198,6 +183,17 @@ class AppECG:
                         row=rows + 1, col=cols + 1
                     )
 
+        self.fig.update_layout({
+            ax: {
+                "showspikes": True,
+                "spikemode": "across",
+                "spikedash": "solid",
+                "spikesnap": "cursor",
+                "spikethickness": 1,
+                "spikecolor": "tomato"
+            } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
+
+        self.fig.update_traces(xaxis="x")
         self.fig.update_layout(xaxis1=dict(range=self.range))
         self.fig.update_layout(xaxis2=dict(range=self.range))
         self.fig.update_layout(xaxis3=dict(range=self.range))
@@ -210,6 +206,8 @@ class AppECG:
         self.fig.update_layout(xaxis10=dict(range=self.range))
         self.fig.update_layout(xaxis11=dict(range=self.range))
         self.fig.update_layout(xaxis12=dict(range=self.range))
+
+        self.fig.update_xaxes(matches='x')
 
         self.fig.update_layout(height=950, width=1500)
 
