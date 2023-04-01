@@ -126,7 +126,7 @@ class AppECG:
                             y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
                             name=f"{self.view_settings[self.view_condition][rows][cols]}",
                         ),
-                        row=rows - 1, col=cols,
+                        row=rows + 1, col=cols + 1,
                     )
 
             if not clickData:
@@ -148,16 +148,17 @@ class AppECG:
                     temp_col = 2
                 else:
                     temp_col = 1
-                print(f"Last marked lead: {self.last_marked_lead}")
+
                 temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
-                print(f"Temp row: {temp_row + 1}")
-                self.fig.add_trace(
+
+                self.fig.update_annotations(
                     go.Marker(
                         x=[self.last_marked_lead_xy["x"]],
                         y=[self.last_marked_lead_xy["y"]],
                     ),
                     row=temp_row + 1, col=temp_col,
                 )
+
                 # self.fig.update_traces(
                 #     go.Scatter(
                 #         mode='markers',
@@ -184,7 +185,6 @@ class AppECG:
         )
 
     def make_plots(self):
-        traces = []
         if not self.view_condition:
             for rows in range(self.view[self.view_condition][0]):
                 for cols in range(self.view[self.view_condition][1]):
