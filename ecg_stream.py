@@ -67,8 +67,9 @@ class AppECG:
                 self.lead_names[5],
                 self.lead_names[11]
             ),
-
-            shared_xaxes=True
+            shared_xaxes=True,
+            horizontal_spacing=0.02,
+            vertical_spacing=0.02
         )
 
         self.line_position = self.range[0]
@@ -90,13 +91,6 @@ class AppECG:
                 ],
                 value=self.sample_number
             ),
-
-            # dcc.Slider(
-            #     id="slider",
-            #     min=self.range[0], max=self.range[1],
-            #     value=self.range[0] + 1,
-            #     step=0.1
-            # ),
 
             dcc.Graph(
                 figure=self.fig,
@@ -193,7 +187,8 @@ class AppECG:
                 "spikecolor": "tomato"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
-        self.fig.update_traces(xaxis="x")
+        #self.fig.update_traces(xaxis="x")
+
         self.fig.update_layout(xaxis1=dict(range=self.range))
         self.fig.update_layout(xaxis2=dict(range=self.range))
         self.fig.update_layout(xaxis3=dict(range=self.range))
@@ -206,8 +201,6 @@ class AppECG:
         self.fig.update_layout(xaxis10=dict(range=self.range))
         self.fig.update_layout(xaxis11=dict(range=self.range))
         self.fig.update_layout(xaxis12=dict(range=self.range))
-
-        self.fig.update_xaxes(matches='x')
 
         self.fig.update_layout(height=950, width=1500)
 

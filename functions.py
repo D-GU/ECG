@@ -47,7 +47,7 @@ def preprocess(_ecg_signal, _sampling_rate):
 def get_clean_signal(_signal, _sampling_rate):
     # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
 
-    _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate, method="biosppy")
+    # _cleaned = ecg_clean(_signal, sampling_rate=_sampling_rate)
 
     # Apply lowpass filter
     # _cleaned = signal_filter(
@@ -60,15 +60,16 @@ def get_clean_signal(_signal, _sampling_rate):
     #
     # _cleaned = signal_filter(signal=_cleaned, sampling_rate=_sampling_rate, method="powerline")
 
-    _cleaned = filter_signal(
-        signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=0.3, band="lowpass"
-    )[0]
 
-    _cleaned += scipy.signal.quadratic(_cleaned)
-
-    _cleaned += filter_signal(
-        signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=8, band="highpass"
-    )[0]
+    # _cleaned = filter_signal(
+    #     signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=0.3, band="lowpass"
+    # )[0]
+    #
+    # _cleaned += scipy.signal.quadratic(_cleaned)
+    #
+    # _cleaned += filter_signal(
+    #     signal=_cleaned, sampling_rate=_sampling_rate, order=5, frequency=8, band="highpass"
+    # )[0]
 
     # _instant_peaks, _r_peaks = ecg_peaks(_cleaned, sampling_rate=_sampling_rate)
 
@@ -76,7 +77,7 @@ def get_clean_signal(_signal, _sampling_rate):
 
     # print(quality)
 
-    return _signal
+    return ecg_clean(_signal, _sampling_rate)
 
 
 def get_clean_matrix(_matrix, _sampling_rate):
