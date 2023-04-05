@@ -6,13 +6,12 @@ import plotly.graph_objects as go
 import plotly.io
 import dash
 import dash_bootstrap_components as dbc
-import plotly.express as px
 import json
 import panel as pn
 
 from dash.dependencies import Input, Output
 from dash import dcc
-from dash import html, ClientsideFunction
+from dash import html
 from plotly.subplots import make_subplots
 
 
@@ -44,14 +43,17 @@ class AppECG:
         self.range = [350, 700]
 
         self.fig = make_subplots(
-            rows=6, cols=2,
+            rows=8, cols=2,
+
             specs=[
                 [{}, {}],
                 [{}, {}],
                 [{}, {}],
                 [{}, {}],
                 [{}, {}],
-                [{}, {}]
+                [{}, {}],
+                [{}, {}],
+                [{"colspan": 2, "rowspan": 1}, None]
             ],
             subplot_titles=(
                 self.lead_names[0],
@@ -65,12 +67,47 @@ class AppECG:
                 self.lead_names[4],
                 self.lead_names[10],
                 self.lead_names[5],
-                self.lead_names[11]
+                self.lead_names[11],
+                "",
+                "",
+                "Ритмограмма"
             ),
             shared_xaxes=True,
             horizontal_spacing=0.02,
             vertical_spacing=0.02
         )
+
+        self.mark_fig = make_subplots(
+            rows=8, cols=2,
+
+            specs=[
+                [{}, {}],
+                [{}, {}],
+                [{}, {}],
+                [{}, {}],
+                [{}, {}],
+                [{}, {}],
+                [{}, {}],
+                [{"colspan": 2, "rowspan": 1}, None]
+            ],
+        )
+        self.current_parameter = "P"
+        self.parameters = [[], []]
+
+        self.parameters = [
+            [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
+        ]
+
+        self.ids = {
+            "P": 0,
+            "Q": 1,
+            "R": 2,
+            "S": 3,
+            "T": 4,
+            "P_Int": 5,
+            "Q_Int": 6,
+            "R_Int": 7,
+        }
 
         self.line_position = self.range[0]
 
@@ -126,6 +163,25 @@ class AppECG:
                         row=rows + 1, col=cols + 1,
                     )
 
+                    current_lead = self.view_settings[self.view_condition][rows][cols]
+
+                    self.fig.update_traces(
+                        go.Scatter(
+                            x=self.get_xy_data(current_lead)[0],
+                            y=self.get_xy_data(current_lead)[1]
+                        )
+                    )
+
+            self.fig.update_traces(
+                go.Scatter(
+                    x=[i for i in range(1000)],
+                    y=self.ecg_matrix[2],
+                    name=f"Ритмограмма",
+                    fillcolor="gray"
+                ),
+                row=8, col=1
+            )
+
             if not clickData:
                 ...
             else:
@@ -141,22 +197,36 @@ class AppECG:
                     )
                 )
 
-                if self.last_marked_lead & 0x1:
-                    temp_col = 2
-                else:
-                    temp_col = 1
+                if self.last_marked_lead < 12:
+                    if self.last_marked_lead & 0x1:
+                        temp_col = 2
+                    else:
+                        temp_col = 1
 
-                temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
+                    temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
 
-                self.fig.add_annotation(
-                    go.Marker(
-                        x=[self.last_marked_lead_xy["x"]],
-                        y=[self.last_marked_lead_xy["y"]],
-                    ),
-                    row=temp_row + 1, col=temp_col,
-                )
+                    # Add last clicked data to a list
+                    self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+                        (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
+                    )
+
+                    self.fig.add_scatter(
+                        x=self.get_xy_data(self.last_marked_lead)[0],
+                        y=self.get_xy_data(self.last_marked_lead)[1],
+                        marker=dict(
+                            size=5,
+                        ),
+                        row=temp_row + 1, col=temp_col
+                    )
 
             return self.fig
+
+    def get_xy_data(self, lead):
+        current = np.array(
+            self.parameters[self.ids[self.current_parameter]][self.sample_number][
+                lead]
+        )
+        return np.array([data[0] for data in current]), np.array([data[1] for data in current])
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -177,6 +247,16 @@ class AppECG:
                         row=rows + 1, col=cols + 1
                     )
 
+            self.fig.add_trace(
+                go.Scatter(
+                    x=[i for i in range(1000)],
+                    y=self.ecg_matrix[2],
+                    name=f"Ритмограмма",
+                    fillcolor="gray"
+                ),
+                row=8, col=1
+            )
+
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
@@ -187,7 +267,7 @@ class AppECG:
                 "spikecolor": "tomato"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
-        #self.fig.update_traces(xaxis="x")
+        # self.fig.update_traces(xaxis="x")
 
         self.fig.update_layout(xaxis1=dict(range=self.range))
         self.fig.update_layout(xaxis2=dict(range=self.range))
@@ -202,6 +282,7 @@ class AppECG:
         self.fig.update_layout(xaxis11=dict(range=self.range))
         self.fig.update_layout(xaxis12=dict(range=self.range))
 
+        self.fig.update_layout(showlegend=False)
         self.fig.update_layout(height=950, width=1500)
 
 
