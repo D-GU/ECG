@@ -161,6 +161,21 @@ class AppECG:
                     row=rows + 1, col=1
                 )
 
+            for rows in range(self.view[self.view_condition][0]):
+                for peaks in self.get_xy_data(rows)[0]:
+                    self.fig.update_shapes(
+                        selector=dict(
+                            line={'color': 'tomato', 'width': 5},
+                            x0=peaks,
+                            x1=peaks,
+                            y0=0.02,
+                            y1=-0.02,
+                            visible=True,
+                            layer="below",
+                        ),
+                        row=rows + 1, col=1
+                    )
+
             if not clickData:
                 ...
             else:
@@ -180,22 +195,12 @@ class AppECG:
                     (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
                 )
 
-                # for rows in range(self.view[self.view_condition][0]):
-                #     for peaks in self.get_xy_data(rows)[0]:
-                #         self.fig.update_shapes(
-                #             patch=dict(
-                #                 line={'color': 'tomato', 'width': 5},
-                #                 x0=peaks,
-                #                 x1=peaks,
-                #                 y0=0.02,
-                #                 y1=-0.02,
-                #                 visible=True,
-                #                 layer="below",
-                #             ),
-                #             row=rows + 1, col=1
-                #         )
-
             return self.fig
+
+    def get_closest_point_index(self, vline_x):
+        p_parameters = self.parameters[self.ids["P"]][self.sample_number][0]
+        min_dist = np.minimum(np.array([abs(vline_x - param) for param in p_parameters]))
+        return p_parameters.index(min_dist)
 
     def get_xy_data(self, lead):
         current = np.array(
