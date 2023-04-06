@@ -1,13 +1,11 @@
 import streamlit as st
 import numpy as np
 import functions as fns
-import plotly
 import plotly.graph_objects as go
-import plotly.io
 import dash
 import dash_bootstrap_components as dbc
 import json
-import panel as pn
+import os
 
 from dash.dependencies import Input, Output
 from dash import dcc
@@ -21,7 +19,7 @@ class AppECG:
         self.sampling_rate = sampling_rate
         self.recording_speed = recording_speed
         self.recording_time = recording_time
-        self.view_condition = 0
+        self.view_condition = 1
         self.sample_number = 0
         self.quantity_samples = data.shape[0]
         self.ecg_matrix = self.update_matrix()
@@ -43,60 +41,55 @@ class AppECG:
         self.range = [350, 700]
 
         self.fig = make_subplots(
-            rows=8, cols=2,
+            rows=13, cols=1,
 
             specs=[
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{"colspan": 2, "rowspan": 1}, None]
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
+                [{}],
             ],
+
             subplot_titles=(
                 self.lead_names[0],
-                self.lead_names[6],
                 self.lead_names[1],
-                self.lead_names[7],
                 self.lead_names[2],
-                self.lead_names[8],
                 self.lead_names[3],
-                self.lead_names[9],
                 self.lead_names[4],
-                self.lead_names[10],
                 self.lead_names[5],
+                self.lead_names[6],
+                self.lead_names[7],
+                self.lead_names[8],
+                self.lead_names[9],
+                self.lead_names[10],
                 self.lead_names[11],
-                "",
-                "",
-                "Ритмограмма"
+                # "Ритмограмма"
             ),
             shared_xaxes=True,
-            horizontal_spacing=0.02,
-            vertical_spacing=0.02
+            horizontal_spacing=0.045,
+            vertical_spacing=0.01,
         )
 
-        self.mark_fig = make_subplots(
-            rows=8, cols=2,
-
-            specs=[
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{}, {}],
-                [{"colspan": 2, "rowspan": 1}, None]
-            ],
-        )
         self.current_parameter = "P"
-        self.parameters = [[], []]
 
-        self.parameters = [
-            [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
-        ]
+        self.filename = "test.npy"
+
+        # If markup file exist take that file as a data else create a new one
+        if os.path.exists(self.filename):
+            self.parameters = np.load(self.filename, allow_pickle=True)
+        else:
+            self.parameters = [
+                [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
+            ]
 
         self.ids = {
             "P": 0,
@@ -109,12 +102,8 @@ class AppECG:
             "R_Int": 7,
         }
 
-        self.line_position = self.range[0]
-
         self.last_marked_lead = None
         self.last_marked_lead_xy = None
-
-        self.make_plots()
 
         self.app = dash.Dash()
 
@@ -132,6 +121,15 @@ class AppECG:
             dcc.Graph(
                 figure=self.fig,
                 id="ecg_layout",
+                config={
+                    'modeBarButtonsToAdd': [
+                        'drawline',
+                        'drawopenpath',
+                        'drawclosedpath',
+                        'eraseshape'
+                    ],
+                    "scrollZoom": True,
+                }
             ),
 
             html.Div(
@@ -148,39 +146,20 @@ class AppECG:
         )
         def visual_updater(value, clickData):
             selected_value = value
+
             self.sample_number = selected_value
 
             self.ecg_matrix = self.update_matrix()
 
             for rows in range(self.view[self.view_condition][0]):
-                for cols in range(self.view[self.view_condition][1]):
-                    self.fig.update_traces(
-                        patch=go.Scatter(
-                            x=[i for i in range(1000)],
-                            y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
-                            name=f"{self.view_settings[self.view_condition][rows][cols]}",
-                        ),
-                        row=rows + 1, col=cols + 1,
-                    )
-
-                    current_lead = self.view_settings[self.view_condition][rows][cols]
-
-                    self.fig.update_traces(
-                        go.Scatter(
-                            x=self.get_xy_data(current_lead)[0],
-                            y=self.get_xy_data(current_lead)[1]
-                        )
-                    )
-
-            self.fig.update_traces(
-                go.Scatter(
-                    x=[i for i in range(1000)],
-                    y=self.ecg_matrix[2],
-                    name=f"Ритмограмма",
-                    fillcolor="gray"
-                ),
-                row=8, col=1
-            )
+                self.fig.update_traces(
+                    patch=go.Scatter(
+                        x=[i for i in range(1000)],
+                        y=self.ecg_matrix[rows],
+                        name=self.lead_names[rows]
+                    ),
+                    row=rows + 1, col=1
+                )
 
             if not clickData:
                 ...
@@ -197,28 +176,74 @@ class AppECG:
                     )
                 )
 
-                if self.last_marked_lead < 12:
-                    if self.last_marked_lead & 0x1:
-                        temp_col = 2
-                    else:
-                        temp_col = 1
+                self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+                    (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
+                )
 
-                    temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
+            # for rows in range(1, 13):
+            #     self.fig.update_shapes(
+            #         line=dict(
+            #             color="tomato",
+            #             width=5,
+            #         ),
+            #         x0=self.get_xy_data(rows - 1)[0],
+            #         x1=self.get_xy_data(rows - 1)[1],
+            #         y0=-0.05,
+            #         y1=0.05,
+            #         row=rows,
+            #         col=1,
+            #         visible=True,
+            #         layer="above"
+            #     )
+            #
+            # self.fig.update_traces(
+            #     go.Scatter(
+            #         x=self.get_xy_data(current_lead)[0],
+            #         y=self.get_xy_data(current_lead)[1]
+            #     )
+            # )
 
-                    # Add last clicked data to a list
-                    self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
-                        (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
-                    )
+            # self.fig.update_traces(
+            #     go.Scatter(
+            #         x=[i for i in range(1000)],
+            #         y=self.ecg_matrix[2],
+            #         name=f"Ритмограмма",
+            #         fillcolor="gray"
+            #     ),
+            #     row=13, col=1
+            # )
 
-                    self.fig.add_scatter(
-                        x=self.get_xy_data(self.last_marked_lead)[0],
-                        y=self.get_xy_data(self.last_marked_lead)[1],
-                        marker=dict(
-                            size=5,
-                        ),
-                        row=temp_row + 1, col=temp_col
-                    )
-
+            # if not clickData:
+            #     ...
+            # else:
+            #     self.last_marked_lead = json.loads(
+            #         json.dumps(
+            #             {k: clickData["points"][0][k] for k in ["curveNumber"]}
+            #         )
+            #     )["curveNumber"]
+            #
+            #     self.last_marked_lead_xy = json.loads(
+            #         json.dumps(
+            #             {k: clickData["points"][0][k] for k in ["x", "y"]}
+            #         )
+            #     )
+            #
+            #     temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
+            #
+            #     # Add last clicked data to a list
+            #     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+            #         (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
+            #     )
+            #
+            #     self.fig.add_scatter(
+            #         x=self.get_xy_data(self.last_marked_lead)[0],
+            #         y=self.get_xy_data(self.last_marked_lead)[1],
+            #         marker=dict(
+            #             size=5,
+            #         ),
+            #         row=temp_row + 1
+            #     )
+            #
             return self.fig
 
     def get_xy_data(self, lead):
@@ -234,28 +259,40 @@ class AppECG:
         )
 
     def make_plots(self):
-        if not self.view_condition:
-            for rows in range(self.view[self.view_condition][0]):
-                for cols in range(self.view[self.view_condition][1]):
-                    self.fig.add_trace(
-                        go.Scatter(
-                            x=[i for i in range(1000)],
-                            y=self.ecg_matrix[self.view_settings[self.view_condition][rows][cols]],
-                            name=f"{self.view_settings[self.view_condition][rows][cols]}",
-                            fillcolor="gray"
-                        ),
-                        row=rows + 1, col=cols + 1
-                    )
-
+        for rows in range(self.view[self.view_condition][0]):
             self.fig.add_trace(
                 go.Scatter(
                     x=[i for i in range(1000)],
-                    y=self.ecg_matrix[2],
-                    name=f"Ритмограмма",
-                    fillcolor="gray"
+                    y=self.ecg_matrix[rows],
+                    name=self.lead_names[rows]
                 ),
-                row=8, col=1
+                row=rows + 1, col=1
             )
+
+        # for rows in range(1, 13):
+        #     self.fig.add_shape(
+        #         line=dict(
+        #             color="tomato",
+        #             width=5,
+        #         ),
+        #         x0=self.get_xy_data(rows - 1)[0],
+        #         x1=self.get_xy_data(rows - 1)[1],
+        #         y0=-0.05,
+        #         y1=0.05,
+        #         row=rows,
+        #         col=1,
+        #         visible=True,
+        #         layer="above"
+        #     )
+        # self.fig.add_trace(
+        #     go.Scatter(
+        #         x=[i for i in range(1000)],
+        #         y=self.ecg_matrix[2],
+        #         name=f"Ритмограмма",
+        #         fillcolor="gray"
+        #     ),
+        #     row=13, col=1
+        # )
 
         self.fig.update_layout({
             ax: {
@@ -267,22 +304,8 @@ class AppECG:
                 "spikecolor": "tomato"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
-        # self.fig.update_traces(xaxis="x")
-
-        self.fig.update_layout(xaxis1=dict(range=self.range))
-        self.fig.update_layout(xaxis2=dict(range=self.range))
-        self.fig.update_layout(xaxis3=dict(range=self.range))
-        self.fig.update_layout(xaxis4=dict(range=self.range))
-        self.fig.update_layout(xaxis5=dict(range=self.range))
-        self.fig.update_layout(xaxis6=dict(range=self.range))
-        self.fig.update_layout(xaxis7=dict(range=self.range))
-        self.fig.update_layout(xaxis8=dict(range=self.range))
-        self.fig.update_layout(xaxis9=dict(range=self.range))
-        self.fig.update_layout(xaxis10=dict(range=self.range))
-        self.fig.update_layout(xaxis11=dict(range=self.range))
-        self.fig.update_layout(xaxis12=dict(range=self.range))
-
-        self.fig.update_layout(showlegend=False)
+        self.fig.update_traces(xaxis="x")
+        self.fig.update_layout(showlegend=True)
         self.fig.update_layout(height=950, width=1500)
 
 
@@ -300,5 +323,5 @@ if __name__ == "__main__":
           recording_time,
           recording_speed)
     )
-
+    ecg.make_plots()
     ecg.app.run_server(debug=True, use_reloader=False)
