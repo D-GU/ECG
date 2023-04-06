@@ -180,70 +180,21 @@ class AppECG:
                     (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
                 )
 
-            # for rows in range(1, 13):
-            #     self.fig.update_shapes(
-            #         line=dict(
-            #             color="tomato",
-            #             width=5,
-            #         ),
-            #         x0=self.get_xy_data(rows - 1)[0],
-            #         x1=self.get_xy_data(rows - 1)[1],
-            #         y0=-0.05,
-            #         y1=0.05,
-            #         row=rows,
-            #         col=1,
-            #         visible=True,
-            #         layer="above"
-            #     )
-            #
-            # self.fig.update_traces(
-            #     go.Scatter(
-            #         x=self.get_xy_data(current_lead)[0],
-            #         y=self.get_xy_data(current_lead)[1]
-            #     )
-            # )
+                # for rows in range(self.view[self.view_condition][0]):
+                #     for peaks in self.get_xy_data(rows)[0]:
+                #         self.fig.update_shapes(
+                #             patch=dict(
+                #                 line={'color': 'tomato', 'width': 5},
+                #                 x0=peaks,
+                #                 x1=peaks,
+                #                 y0=0.02,
+                #                 y1=-0.02,
+                #                 visible=True,
+                #                 layer="below",
+                #             ),
+                #             row=rows + 1, col=1
+                #         )
 
-            # self.fig.update_traces(
-            #     go.Scatter(
-            #         x=[i for i in range(1000)],
-            #         y=self.ecg_matrix[2],
-            #         name=f"Ритмограмма",
-            #         fillcolor="gray"
-            #     ),
-            #     row=13, col=1
-            # )
-
-            # if not clickData:
-            #     ...
-            # else:
-            #     self.last_marked_lead = json.loads(
-            #         json.dumps(
-            #             {k: clickData["points"][0][k] for k in ["curveNumber"]}
-            #         )
-            #     )["curveNumber"]
-            #
-            #     self.last_marked_lead_xy = json.loads(
-            #         json.dumps(
-            #             {k: clickData["points"][0][k] for k in ["x", "y"]}
-            #         )
-            #     )
-            #
-            #     temp_row = self.lead_names.index(self.lead_names[self.last_marked_lead]) // 2
-            #
-            #     # Add last clicked data to a list
-            #     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
-            #         (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
-            #     )
-            #
-            #     self.fig.add_scatter(
-            #         x=self.get_xy_data(self.last_marked_lead)[0],
-            #         y=self.get_xy_data(self.last_marked_lead)[1],
-            #         marker=dict(
-            #             size=5,
-            #         ),
-            #         row=temp_row + 1
-            #     )
-            #
             return self.fig
 
     def get_xy_data(self, lead):
@@ -251,7 +202,7 @@ class AppECG:
             self.parameters[self.ids[self.current_parameter]][self.sample_number][
                 lead]
         )
-        return np.array([data[0] for data in current]), np.array([data[1] for data in current])
+        return np.array([int(data[0]) for data in current]), np.array([data[1] for data in current])
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -269,30 +220,16 @@ class AppECG:
                 row=rows + 1, col=1
             )
 
-        # for rows in range(1, 13):
-        #     self.fig.add_shape(
-        #         line=dict(
-        #             color="tomato",
-        #             width=5,
-        #         ),
-        #         x0=self.get_xy_data(rows - 1)[0],
-        #         x1=self.get_xy_data(rows - 1)[1],
-        #         y0=-0.05,
-        #         y1=0.05,
-        #         row=rows,
-        #         col=1,
-        #         visible=True,
-        #         layer="above"
-        #     )
-        # self.fig.add_trace(
-        #     go.Scatter(
-        #         x=[i for i in range(1000)],
-        #         y=self.ecg_matrix[2],
-        #         name=f"Ритмограмма",
-        #         fillcolor="gray"
-        #     ),
-        #     row=13, col=1
-        # )
+        for rows in range(self.view[self.view_condition][0]):
+            for peaks in self.get_xy_data(rows)[0]:
+                self.fig.add_shape(
+                    line={"color": "tomato", "width": 3},
+                    x0=peaks,
+                    x1=peaks,
+                    y0=0.03,
+                    y1=-0.03,
+                    layer="above"
+                )
 
         self.fig.update_layout({
             ax: {
