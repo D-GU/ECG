@@ -197,9 +197,9 @@ class AppECG:
 
             return self.fig
 
-    def get_closest_point_index(self, vline_x):
+    def get_closest_point_index(self, x):
         p_parameters = self.parameters[self.ids["P"]][self.sample_number][0]
-        min_dist = np.minimum(np.array([abs(vline_x - param) for param in p_parameters]))
+        min_dist = np.minimum(np.array([abs(x - param) for param in p_parameters]))
         return p_parameters.index(min_dist)
 
     def get_xy_data(self, lead):
