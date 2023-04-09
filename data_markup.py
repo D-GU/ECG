@@ -453,7 +453,7 @@ class Callback:
         plt.draw()
 
     def on_key_press(self, event):
-        if event.key == 'q':
+        if event.key == 'q' or event.key == "Q":
             np.save(self.filename, self.parameters)
 
 

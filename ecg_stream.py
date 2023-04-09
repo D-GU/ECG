@@ -129,7 +129,7 @@ class AppECG:
                         'eraseshape'
                     ],
                     "scrollZoom": True,
-                }
+                },
             ),
 
             html.Div(
@@ -141,50 +141,45 @@ class AppECG:
             Output(component_id="ecg_layout", component_property="figure"),
             [
                 Input(component_id="drop", component_property="value"),
-                Input(component_id="ecg_layout", component_property="clickData")
             ]
         )
-        def visual_updater(value, clickData):
+        def visual_updater(value):
             self.sample_number = value
 
             for rows in range(self.view[self.view_condition][0]):
                 self.fig.update_traces(
-                    patch=go.Line(
+                    patch=go.Scatter(
                         x=[i for i in range(1000)],
                         y=self.update_matrix()[rows],
                         name=self.lead_names[rows]
                     ),
+                    secondary_y=True,
+                    # overwrite=True,
                     row=rows + 1, col=1,
                 )
 
-                self.fig.update_annotations(
-                    x=self.get_xy_data(rows)[0],
-                    y=self.get_xy_data(rows)[1],
-                    row=rows + 1,
-                    col=1,
-                    showarrow=True,
-                    text="ANNO"
-                )
-            # if not clickData:
-            #     ...
-            # else:
-            #     self.last_marked_lead = json.loads(
-            #         json.dumps(
-            #             {k: clickData["points"][0][k] for k in ["curveNumber"]}
-            #         )
-            #     )["curveNumber"]
-            #
-            #     self.last_marked_lead_xy = json.loads(
-            #         json.dumps(
-            #             {k: clickData["points"][0][k] for k in ["x", "y"]}
-            #         )
-            #     )
-            #
-            #     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
-            #         [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
-            #     )
-
             return self.fig
+
+        def update_markers(clickData):
+            if not clickData:
+                ...
+            else:
+                self.last_marked_lead = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["curveNumber"]}
+                    )
+                )["curveNumber"]
+
+                self.last_marked_lead_xy = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["x", "y"]}
+                    )
+                )
+
+                print(f"Last marked lead: {self.last_marked_lead}")
+                self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+                    [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
+                )
 
     def get_closest_point_index(self, x):
         p_parameters = self.parameters[self.ids["P"]][self.sample_number][0]
@@ -217,17 +212,23 @@ class AppECG:
                     y=self.ecg_matrix[rows],
                     name=self.lead_names[rows]
                 ),
-                row=rows + 1, col=1
+                row=rows + 1, col=1,
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            self.fig.add_annotation(
-                x=self.get_xy_data(rows)[0],
-                y=self.get_xy_data(rows)[1],
+            self.fig.add_trace(
+                go.Marker(
+                    mode="markers",
+                    marker=dict(
+                        color="tomato"
+                    ),
+                    x=self.get_xy_data(rows)[0],
+                    y=self.get_xy_data(rows)[1],
+                    hoverinfo="x + y",
+                    hoveron="points"
+                ),
                 row=rows + 1,
                 col=1,
-                showarrow=True,
-                text="ANNO"
             )
 
         self.fig.update_layout({
@@ -243,6 +244,7 @@ class AppECG:
         # self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=True)
         self.fig.update_layout(height=950, width=1500)
+        self.fig.layout.hovermode = 'closest'
 
 
 if __name__ == "__main__":
