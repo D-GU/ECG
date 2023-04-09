@@ -121,15 +121,6 @@ class AppECG:
             dcc.Graph(
                 figure=self.fig,
                 id="ecg_layout",
-                config={
-                    'modeBarButtonsToAdd': [
-                        'drawline',
-                        'drawopenpath',
-                        'drawclosedpath',
-                        'eraseshape'
-                    ],
-                    "scrollZoom": True,
-                },
             ),
 
             html.Div(
@@ -137,28 +128,28 @@ class AppECG:
             )
         ])
 
-        @self.app.callback(
-            Output(component_id="ecg_layout", component_property="figure"),
-            [
-                Input(component_id="drop", component_property="value"),
-            ]
-        )
-        def visual_updater(value):
-            self.sample_number = value
-
-            for rows in range(self.view[self.view_condition][0]):
-                self.fig.update_traces(
-                    patch=go.Scatter(
-                        x=[i for i in range(1000)],
-                        y=self.update_matrix()[rows],
-                        name=self.lead_names[rows]
-                    ),
-                    secondary_y=True,
-                    # overwrite=True,
-                    row=rows + 1, col=1,
-                )
-
-            return self.fig
+        # @self.app.callback(
+        #     Output(component_id="ecg_layout", component_property="figure"),
+        #     [
+        #         Input(component_id="drop", component_property="value")
+        #     ]
+        # )
+        # def visual_updater(value):
+        #     self.sample_number = value
+        #
+        #     for rows in range(self.view[self.view_condition][0]):
+        #         self.fig.update_traces(
+        #             patch=go.Scatter(
+        #                 x=[i for i in range(1000)],
+        #                 y=self.update_matrix()[rows],
+        #                 name=self.lead_names[rows]
+        #             ),
+        #             secondary_y=None,
+        #             overwrite=True,
+        #             row=rows + 1, col=1,
+        #         )
+        #
+        #     return self.fig
 
         def update_markers(clickData):
             if not clickData:
@@ -182,9 +173,13 @@ class AppECG:
                 )
 
     def get_closest_point_index(self, x):
+        # get closets p param in 0 lead
         p_parameters = self.parameters[self.ids["P"]][self.sample_number][0]
-        min_dist = np.minimum(np.array([abs(x - param) for param in p_parameters]))
-        return p_parameters.index(min_dist)
+
+        dists = [int(np.abs(x - param[0])) for param in p_parameters]
+        min_dist = np.min(dists)
+
+        return int(p_parameters[dists.index(min_dist)][0])
 
     def get_xy_data(self, lead):
         current = np.array(
@@ -216,20 +211,20 @@ class AppECG:
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            self.fig.add_trace(
-                go.Marker(
-                    mode="markers",
-                    marker=dict(
-                        color="tomato"
+            for x, y in zip(self.get_xy_data(rows)[0], self.get_xy_data(rows)[1]):
+                self.fig.add_shape(
+                    x0=x,
+                    x1=x,
+                    y0=y,
+                    y1=y + 0.01,
+                    line=dict(
+                        color="tomato",
+                        width=4
                     ),
-                    x=self.get_xy_data(rows)[0],
-                    y=self.get_xy_data(rows)[1],
-                    hoverinfo="x + y",
-                    hoveron="points"
-                ),
-                row=rows + 1,
-                col=1,
-            )
+                    row=rows + 1,
+                    col=1
+                )
+
 
         self.fig.update_layout({
             ax: {
