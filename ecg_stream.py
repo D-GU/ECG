@@ -6,6 +6,7 @@ import dash
 import dash_bootstrap_components as dbc
 import json
 import os
+import plotly.express as px
 
 from dash.dependencies import Input, Output
 from dash import dcc
@@ -153,7 +154,7 @@ class AppECG:
 
             for rows in range(self.view[self.view_condition][0]):
                 self.fig.update_traces(
-                    patch=go.Scatter(
+                    patch=go.Line(
                         x=[i for i in range(1000)],
                         y=self.ecg_matrix[rows],
                         name=self.lead_names[rows]
@@ -207,7 +208,13 @@ class AppECG:
             self.parameters[self.ids[self.current_parameter]][self.sample_number][
                 lead]
         )
-        return np.array([int(data[0]) for data in current]), np.array([data[1] for data in current])
+        x_d = np.array([int(data[0]) for data in current])
+        x_y = np.array([data[1] for data in current])
+
+        if x_d.size == 0:
+            return np.array([np.nan]), np.array([np.nan])
+
+        return x_d, x_y
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -217,7 +224,7 @@ class AppECG:
     def make_plots(self):
         for rows in range(self.view[self.view_condition][0]):
             self.fig.add_trace(
-                go.Scatter(
+                go.Line(
                     x=[i for i in range(1000)],
                     y=self.ecg_matrix[rows],
                     name=self.lead_names[rows]
@@ -226,16 +233,16 @@ class AppECG:
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            for peaks in self.get_xy_data(rows)[0]:
-                self.fig.add_shape(
-                    line={"color": "tomato", "width": 3},
-                    x0=peaks,
-                    x1=peaks,
-                    y0=0.03,
-                    y1=-0.03,
-                    layer="above"
+            self.fig.add_scatter(
+                x=self.get_xy_data(rows)[0],
+                y=self.get_xy_data(rows)[1],
+                row=rows + 1,
+                col=1,
+                marker=dict(
+                    size=16,
+                    color=np.random.randn(500),  # set color equal to a variable
                 )
-
+            )
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
