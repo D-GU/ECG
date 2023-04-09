@@ -42,10 +42,9 @@ class AppECG:
         self.range = [350, 700]
 
         self.fig = make_subplots(
-            rows=13, cols=1,
+            rows=12, cols=1,
 
             specs=[
-                [{}],
                 [{}],
                 [{}],
                 [{}],
@@ -146,55 +145,44 @@ class AppECG:
             ]
         )
         def visual_updater(value, clickData):
-            selected_value = value
-
-            self.sample_number = selected_value
-
-            self.ecg_matrix = self.update_matrix()
+            self.sample_number = value
 
             for rows in range(self.view[self.view_condition][0]):
                 self.fig.update_traces(
                     patch=go.Line(
                         x=[i for i in range(1000)],
-                        y=self.ecg_matrix[rows],
+                        y=self.update_matrix()[rows],
                         name=self.lead_names[rows]
                     ),
-                    row=rows + 1, col=1
+                    row=rows + 1, col=1,
                 )
 
-            for rows in range(self.view[self.view_condition][0]):
-                for peaks in self.get_xy_data(rows)[0]:
-                    self.fig.update_shapes(
-                        selector=dict(
-                            line={'color': 'tomato', 'width': 5},
-                            x0=peaks,
-                            x1=peaks,
-                            y0=0.02,
-                            y1=-0.02,
-                            visible=True,
-                            layer="below",
-                        ),
-                        row=rows + 1, col=1
-                    )
-
-            if not clickData:
-                ...
-            else:
-                self.last_marked_lead = json.loads(
-                    json.dumps(
-                        {k: clickData["points"][0][k] for k in ["curveNumber"]}
-                    )
-                )["curveNumber"]
-
-                self.last_marked_lead_xy = json.loads(
-                    json.dumps(
-                        {k: clickData["points"][0][k] for k in ["x", "y"]}
-                    )
+                self.fig.update_annotations(
+                    x=self.get_xy_data(rows)[0],
+                    y=self.get_xy_data(rows)[1],
+                    row=rows + 1,
+                    col=1,
+                    showarrow=True,
+                    text="ANNO"
                 )
-
-                self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
-                    (self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"])
-                )
+            # if not clickData:
+            #     ...
+            # else:
+            #     self.last_marked_lead = json.loads(
+            #         json.dumps(
+            #             {k: clickData["points"][0][k] for k in ["curveNumber"]}
+            #         )
+            #     )["curveNumber"]
+            #
+            #     self.last_marked_lead_xy = json.loads(
+            #         json.dumps(
+            #             {k: clickData["points"][0][k] for k in ["x", "y"]}
+            #         )
+            #     )
+            #
+            #     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+            #         [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
+            #     )
 
             return self.fig
 
@@ -233,16 +221,15 @@ class AppECG:
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            self.fig.add_scatter(
+            self.fig.add_annotation(
                 x=self.get_xy_data(rows)[0],
                 y=self.get_xy_data(rows)[1],
                 row=rows + 1,
                 col=1,
-                marker=dict(
-                    size=16,
-                    color=np.random.randn(500),  # set color equal to a variable
-                )
+                showarrow=True,
+                text="ANNO"
             )
+
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
@@ -253,7 +240,7 @@ class AppECG:
                 "spikecolor": "tomato"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
-        self.fig.update_traces(xaxis="x")
+        # self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=True)
         self.fig.update_layout(height=950, width=1500)
 
