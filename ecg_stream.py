@@ -128,28 +128,35 @@ class AppECG:
             )
         ])
 
-        # @self.app.callback(
-        #     Output(component_id="ecg_layout", component_property="figure"),
-        #     [
-        #         Input(component_id="drop", component_property="value")
-        #     ]
-        # )
-        # def visual_updater(value):
-        #     self.sample_number = value
-        #
-        #     for rows in range(self.view[self.view_condition][0]):
-        #         self.fig.update_traces(
-        #             patch=go.Scatter(
-        #                 x=[i for i in range(1000)],
-        #                 y=self.update_matrix()[rows],
-        #                 name=self.lead_names[rows]
-        #             ),
-        #             secondary_y=None,
-        #             overwrite=True,
-        #             row=rows + 1, col=1,
-        #         )
-        #
-        #     return self.fig
+        @self.app.callback(
+            Output(component_id="ecg_layout", component_property="figure"),
+            [
+                Input(component_id="drop", component_property="value")
+            ]
+        )
+        def visual_updater(value):
+            self.sample_number = value
+
+            for rows in range(self.view[self.view_condition][0]):
+                self.fig.update_traces(
+                    patch=go.Scatter(
+                        x=[i for i in range(1000)],
+                        y=self.update_matrix()[rows],
+                        name=self.lead_names[rows]
+                    ),
+                    secondary_y=None,
+                    overwrite=True,
+                    row=rows + 1, col=1,
+                )
+                
+                for x, y in zip(self.get_xy_data(rows)[0], self.get_xy_data(rows)[1]):
+                    self.fig.layout.shapes[rows].x0=x,
+                    self.fig.layout.shapes[rows].x1 = x + 0.01,
+                    self.fig.layout.shapes[rows].y0 = y,
+                    self.fig.layout.shapes[rows].y1 = y + 0.01,
+                    self.fig.layout.shapes[rows].name=f"{self.lead_names[rows]}"
+
+            return self.fig
 
         def update_markers(clickData):
             if not clickData:
@@ -179,12 +186,11 @@ class AppECG:
         dists = [int(np.abs(x - param[0])) for param in p_parameters]
         min_dist = np.min(dists)
 
-        return int(p_parameters[dists.index(min_dist)][0])
+        return int(p_parameters[dists.rows(min_dist)][0])
 
     def get_xy_data(self, lead):
         current = np.array(
-            self.parameters[self.ids[self.current_parameter]][self.sample_number][
-                lead]
+            self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
         )
         x_d = np.array([int(data[0]) for data in current])
         x_y = np.array([data[1] for data in current])
@@ -222,7 +228,8 @@ class AppECG:
                         width=4
                     ),
                     row=rows + 1,
-                    col=1
+                    col=1,
+                    name=f"{self.lead_names[rows]}"
                 )
 
 
