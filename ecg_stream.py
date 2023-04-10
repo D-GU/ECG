@@ -162,20 +162,20 @@ class AppECG:
                     row=rows + 1, col=1
                 )
 
-            for rows in range(self.view[self.view_condition][0]):
-                for peaks in self.get_xy_data(rows)[0]:
-                    self.fig.update_shapes(
-                        selector=dict(
-                            line={'color': 'tomato', 'width': 5},
-                            x0=peaks,
-                            x1=peaks,
-                            y0=0.02,
-                            y1=-0.02,
-                            visible=True,
-                            layer="below",
-                        ),
-                        row=rows + 1, col=1
-                    )
+            for rows in range(12, 24):
+                self.fig.update(
+                    patch=go.Scattergl(
+                        x=self.get_xy_data(rows % 12)[0],
+                        y=self.get_xy_data(rows % 12)[1],
+                        marker=dict(
+                            size=16,
+                            color=np.random.randn(500),  # set color equal to a variable
+                        )
+                    ),
+                    overwrite=True,
+                    row=(rows % 12) + 1,
+                    col=1,
+                )
 
             if not clickData:
                 ...
@@ -205,8 +205,7 @@ class AppECG:
 
     def get_xy_data(self, lead):
         current = np.array(
-            self.parameters[self.ids[self.current_parameter]][self.sample_number][
-                lead]
+            self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
         )
         x_d = np.array([int(data[0]) for data in current])
         x_y = np.array([data[1] for data in current])
@@ -233,16 +232,18 @@ class AppECG:
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            self.fig.add_scatter(
+            self.fig.add_scattergl(
+                mode="markers",
                 x=self.get_xy_data(rows)[0],
                 y=self.get_xy_data(rows)[1],
                 row=rows + 1,
                 col=1,
                 marker=dict(
-                    size=16,
+                    size=13,
                     color=np.random.randn(500),  # set color equal to a variable
                 )
             )
+
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
@@ -253,7 +254,6 @@ class AppECG:
                 "spikecolor": "tomato"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
-        self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=True)
         self.fig.update_layout(height=950, width=1500)
 
