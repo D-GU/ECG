@@ -80,7 +80,7 @@ class AppECG:
         )
 
         self.current_parameter = "P"
-
+        self.p_parameter_median = 0
         self.filename = "test.npy"
 
         # If markup file exist take that file as a data else create a new one
@@ -91,6 +91,16 @@ class AppECG:
                 [[[] for _ in range(12)] for _ in range(self.quantity_samples)] for _ in range(8)
             ]
 
+        self.parameters_color = {
+            "P": "tomato",
+            "Q": "LightSkyBlue",
+            "R": "violet",
+            "S": "olive",
+            "T": "gold",
+            "P_Int": "brown",
+            "Q_Int": "orange",
+            "R_Int": "pink",
+        }
         self.ids = {
             "P": 0,
             "Q": 1,
@@ -131,30 +141,27 @@ class AppECG:
         @self.app.callback(
             Output(component_id="ecg_layout", component_property="figure"),
             [
-                Input(component_id="drop", component_property="value")
+                Input(component_id="drop", component_property="value"),
+                Input(component_id="ecg_layout", component_property="hoverData")
             ]
         )
-        def visual_updater(value):
+        def visual_updater(value, hoverData):
             self.sample_number = value
 
-            for rows in range(self.view[self.view_condition][0]):
-                self.fig.update_traces(
-                    patch=go.Scatter(
-                        x=[i for i in range(1000)],
-                        y=self.update_matrix()[rows],
-                        name=self.lead_names[rows]
-                    ),
-                    secondary_y=None,
-                    overwrite=True,
-                    row=rows + 1, col=1,
+            self.last_marked_lead = json.loads(
+                json.dumps(
+                    {k: hoverData["points"][0][k] for k in ["curveNumber"]}
                 )
-                
-                for x, y in zip(self.get_xy_data(rows)[0], self.get_xy_data(rows)[1]):
-                    self.fig.layout.shapes[rows].x0=x,
-                    self.fig.layout.shapes[rows].x1 = x + 0.01,
-                    self.fig.layout.shapes[rows].y0 = y,
-                    self.fig.layout.shapes[rows].y1 = y + 0.01,
-                    self.fig.layout.shapes[rows].name=f"{self.lead_names[rows]}"
+            )["curveNumber"]
+
+            self.last_marked_lead_xy = json.loads(
+                json.dumps(
+                    {k: hoverData["points"][0][k] for k in ["x", "y"]}
+                )
+            )
+
+            # print(f"x: {self.last_marked_lead_xy['x']} y: {self.last_marked_lead_xy['y']}")
+            x = self.get_closest_point_index(self.last_marked_lead_xy["x"])
 
             return self.fig
 
@@ -181,17 +188,19 @@ class AppECG:
 
     def get_closest_point_index(self, x):
         # get closets p param in 0 lead
-        p_parameters = self.parameters[self.ids["P"]][self.sample_number][0]
+
+        p_parameters = self.parameters[self.ids["P"]][self.sample_number][self.last_marked_lead]
 
         dists = [int(np.abs(x - param[0])) for param in p_parameters]
         min_dist = np.min(dists)
 
-        return int(p_parameters[dists.rows(min_dist)][0])
+        return int(p_parameters[dists.index(min_dist)][0])
 
     def get_xy_data(self, lead):
         current = np.array(
             self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
         )
+
         x_d = np.array([int(data[0]) for data in current])
         x_y = np.array([data[1] for data in current])
 
@@ -217,30 +226,27 @@ class AppECG:
             )
 
         for rows in range(self.view[self.view_condition][0]):
-            for x, y in zip(self.get_xy_data(rows)[0], self.get_xy_data(rows)[1]):
-                self.fig.add_shape(
-                    x0=x,
-                    x1=x,
-                    y0=y,
-                    y1=y + 0.01,
-                    line=dict(
-                        color="tomato",
-                        width=4
-                    ),
-                    row=rows + 1,
-                    col=1,
-                    name=f"{self.lead_names[rows]}"
-                )
-
+            self.fig.add_scattergl(
+                mode="markers",
+                x=self.get_xy_data(rows)[0],
+                y=self.get_xy_data(rows)[1],
+                name=self.current_parameter,
+                marker=dict(
+                    color=self.parameters_color[self.current_parameter],
+                    size=6,
+                ),
+                hoverinfo="name + x + y",
+                row=rows + 1, col=1,
+            )
 
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
                 "spikemode": "across",
                 "spikedash": "solid",
-                "spikesnap": "cursor",
-                "spikethickness": 1,
-                "spikecolor": "tomato"
+                "spikesnap": "hovered data",
+                "spikethickness": 2,
+                "spikecolor": "blue"
             } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
 
         # self.fig.update_traces(xaxis="x")

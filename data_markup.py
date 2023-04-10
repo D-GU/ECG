@@ -412,6 +412,8 @@ class Callback:
             self.get_minimal_distance(x, y, eps_interval_x, eps_interval_y)
             self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][
                 self.lead_id % 12].append((event.xdata, event.ydata))
+            np.sort(self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][
+                self.lead_id % 12])
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
         # If event middle mouse and selected parameter is any interval
@@ -432,7 +434,8 @@ class Callback:
                 self.lead_id % 12].append(
                 ((self.current_x, self.current_y), (x, y))
             )
-
+            np.sort(self.parameters[self.ids[self.parameter_id]][self.sample_id % self.quantity_samples][
+                self.lead_id % 12])
             self.get_scatter_update(self.radio_labels.index(self.parameter_id))
 
             plt.draw()
