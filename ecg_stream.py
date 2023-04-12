@@ -11,6 +11,7 @@ from dash.dependencies import Input, Output
 from dash import dcc
 from dash import html
 from plotly.subplots import make_subplots
+from matplotlib.backend_bases import MouseButton
 
 
 class AppECG:
@@ -196,24 +197,6 @@ class AppECG:
             for trace in self.fig.data:
                 trace.update(xaxis="x")
 
-            # if not hoverData:
-            #     ...
-            # else:
-            #     self.last_marked_lead = json.loads(
-            #         json.dumps(
-            #             {k: hoverData["points"][0][k] for k in ["curveNumber"]}
-            #         )
-            #     )["curveNumber"]
-            #
-            #     self.last_marked_lead_xy = json.loads(
-            #         json.dumps(
-            #             {k: hoverData["points"][0][k] for k in ["x", "y"]}
-            #         )
-            #     )
-
-            # print(f"x: {self.last_marked_lead_xy['x']} y: {self.last_marked_lead_xy['y']}")
-            # x = self.get_closest_point_index(self.last_marked_lead_xy["x"])
-
             return self.fig
 
         # def update_markers(clickData):
@@ -249,7 +232,7 @@ class AppECG:
 
     def get_xy_data(self, lead):
         parsed_word = self.current_parameter.split("_")
-        print(parsed_word)
+
         if "Int" not in parsed_word:
             current = np.array(
                 self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
@@ -263,13 +246,16 @@ class AppECG:
 
             return x, y
         else:
-            current = np.array(
-                self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
-            )
+            x = []
+            y = []
 
-            print(np.array([np.array(data[:, 1]) for data in current]).flatten())
-            x = np.array([np.array(int(data[:, 0])) for data in current]).flatten()
-            y = np.array([np.array(data[:, 1]) for data in current]).flatten()
+            for current in self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]:
+                for x_cur, y_cur in current:
+                    x.append(int(x_cur))
+                    y.append(y_cur)
+
+            x = np.array(x)
+            y = np.array(y)
 
             if x.size == 0:
                 return np.array([np.nan]), np.array([np.nan])
