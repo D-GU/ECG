@@ -6,7 +6,6 @@ import dash
 import dash_bootstrap_components as dbc
 import json
 import os
-import plotly.express as px
 
 from dash.dependencies import Input, Output
 from dash import dcc
@@ -101,6 +100,7 @@ class AppECG:
             "Q_Int": "orange",
             "R_Int": "pink",
         }
+
         self.ids = {
             "P": 0,
             "Q": 1,
@@ -183,11 +183,11 @@ class AppECG:
                     x, y = self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]
                     for coordinates in self.parameters[self.ids[self.current_parameter]][self.sample_number][
                         self.last_marked_lead % 12]:
+
                         if int(coordinates[0]) == x:
                             self.parameters[self.ids[self.current_parameter]][self.sample_number][
                                 self.last_marked_lead % 12].remove(coordinates)
                 else:
-                    print(f"Last marked figure was lead: {self.last_marked_lead}")
                     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
                         [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
                     )
@@ -195,21 +195,6 @@ class AppECG:
             # update vertical line
             for trace in self.fig.data:
                 trace.update(xaxis="x")
-            # for rows in range(self.view[self.view_condition][0]):
-            #     self.fig.update_traces(
-            #         patch=go.Scatter(
-            #             mode="markers",
-            #             x=self.get_xy_data(rows)[0],
-            #             y=self.get_xy_data(rows)[1],
-            #             marker=dict(
-            #                 color=self.parameters_color[self.current_parameter],
-            #                 size=6,
-            #             ),
-            #             hoverinfo="name + x + y "
-            #         ),
-            #         selector=dict(name=f"({str((rows + 12))})"),
-            #         row=rows + 1, col=1
-            #     )
 
             # if not hoverData:
             #     ...
@@ -263,17 +248,33 @@ class AppECG:
         return int(p_parameters[dists.index(min_dist)][0])
 
     def get_xy_data(self, lead):
-        current = np.array(
-            self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
-        )
+        parsed_word = self.current_parameter.split("_")
+        print(parsed_word)
+        if "Int" not in parsed_word:
+            current = np.array(
+                self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
+            )
 
-        x_d = np.array([int(data[0]) for data in current])
-        x_y = np.array([data[1] for data in current])
+            x = np.array([int(data[0]) for data in current])
+            y = np.array([data[1] for data in current])
 
-        if x_d.size == 0:
-            return np.array([np.nan]), np.array([np.nan])
+            if x.size == 0:
+                return np.array([np.nan]), np.array([np.nan])
 
-        return x_d, x_y
+            return x, y
+        else:
+            current = np.array(
+                self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
+            )
+
+            print(np.array([np.array(data[:, 1]) for data in current]).flatten())
+            x = np.array([np.array(int(data[:, 0])) for data in current]).flatten()
+            y = np.array([np.array(data[:, 1]) for data in current]).flatten()
+
+            if x.size == 0:
+                return np.array([np.nan]), np.array([np.nan])
+
+            return x, y
 
     def update_matrix(self):
         return fns.get_clean_matrix(
@@ -343,3 +344,4 @@ if __name__ == "__main__":
     )
     ecg.make_plots()
     ecg.app.run_server(debug=True, use_reloader=False)
+    # np.save(ecg.filename, ecg.parameters)
