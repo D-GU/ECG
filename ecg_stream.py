@@ -75,8 +75,8 @@ class AppECG:
                 # "Ритмограмма"
             ),
             shared_xaxes=True,
-            horizontal_spacing=0.045,
-            vertical_spacing=0.01,
+            horizontal_spacing=0.035,
+            vertical_spacing=0.001,
         )
 
         self.current_parameter = "P"
@@ -143,10 +143,11 @@ class AppECG:
             Output(component_id="ecg_layout", component_property="figure"),
             [
                 Input(component_id="drop", component_property="value"),
-                # Input(component_id="ecg_layout", component_property="hoverData")
+                Input(component_id="ecg_layout", component_property="hoverData"),
+                Input(component_id="ecg_layout", component_property="clickData")
             ]
         )
-        def visual_updater(value):
+        def visual_updater(value, hoverData, clickData):
             # print(value)
             self.current_parameter = value
 
@@ -162,6 +163,38 @@ class AppECG:
                     name=f"{str(lead + 12)}"
                 )
 
+            if not clickData:
+                ...
+            else:
+                self.last_marked_lead = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["curveNumber"]}
+                    )
+                )["curveNumber"]
+
+                self.last_marked_lead_xy = json.loads(
+                    json.dumps(
+                        {k: clickData["points"][0][k] for k in ["x", "y"]}
+                    )
+                )
+
+                # if last marked figure's number is higher than 12 it means that parameter was triggered
+                if self.last_marked_lead >= 12:
+                    x, y = self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]
+                    for coordinates in self.parameters[self.ids[self.current_parameter]][self.sample_number][
+                        self.last_marked_lead % 12]:
+                        if int(coordinates[0]) == x:
+                            self.parameters[self.ids[self.current_parameter]][self.sample_number][
+                                self.last_marked_lead % 12].remove(coordinates)
+                else:
+                    print(f"Last marked figure was lead: {self.last_marked_lead}")
+                    self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
+                        [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
+                    )
+
+            # update vertical line
+            for trace in self.fig.data:
+                trace.update(xaxis="x")
             # for rows in range(self.view[self.view_condition][0]):
             #     self.fig.update_traces(
             #         patch=go.Scatter(
@@ -288,6 +321,10 @@ class AppECG:
         self.fig.update_layout(showlegend=False)
         self.fig.update_layout(height=950, width=1500)
         self.fig.layout.hovermode = 'closest'
+        self.fig.update_layout(
+            margin=dict(l=20, r=20, t=20, b=20),
+            paper_bgcolor="LightSteelBlue",
+        )
 
 
 if __name__ == "__main__":
