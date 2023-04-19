@@ -1,4 +1,3 @@
-import streamlit as st
 import numpy as np
 import functions as fns
 import plotly.graph_objects as go
@@ -11,7 +10,6 @@ from dash.dependencies import Input, Output
 from dash import dcc
 from dash import html
 from plotly.subplots import make_subplots
-from matplotlib.backend_bases import MouseButton
 
 
 class AppECG:
@@ -20,16 +18,18 @@ class AppECG:
         self.sampling_rate = sampling_rate
         self.recording_speed = recording_speed
         self.recording_time = recording_time
-        self.view_condition = 1
+        self.view_condition = 1  # which lead interface is chosen
         self.sample_number = 0
         self.quantity_samples = data.shape[0]
         self.ecg_matrix = self.update_matrix()
 
+        # interface: 6 rows x 2 columns or 12 rows x 1 column
         self.view = {
             0: (6, 2),
             1: (12, 1)
         }
 
+        # a mask where each lead is representing specific position
         self.view_settings = {
             0: ((0, 6), (1, 7), (2, 8), (3, 9), (4, 10), (5, 11)),
             1: (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)
@@ -38,8 +38,6 @@ class AppECG:
         self.lead_names = [
             "i", "ii", "iii", "aVF", "aVR", "aVL", "V1", "V2", "V3", "V4", "V5", "V6"
         ]
-
-        self.range = [350, 700]
 
         self.fig = make_subplots(
             rows=12, cols=1,
@@ -102,6 +100,7 @@ class AppECG:
             "R_Int": "pink",
         }
 
+        # each parameter id in data
         self.ids = {
             "P": 0,
             "Q": 1,
@@ -116,57 +115,53 @@ class AppECG:
         self.last_marked_lead = None
         self.last_marked_lead_xy = None
 
-        self.app = dash.Dash()
+        self.app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
         self.app.layout = html.Div([
             html.H3("ECG"),
 
-            dcc.Dropdown(
-                id="drop",
-                options=[
-                    # {"label": i, "value": i} for i in range(self.quantity_samples)
-                    {"label": keys, "value": keys} for keys in self.ids.keys()
-                ],
-                value=self.current_parameter
+            dbc.Row(
+                dcc.RadioItems(
+                    [parameter for parameter in self.ids.keys()],
+                    inline=True,
+                    id="radio_parameters",
+                    value=self.current_parameter
+                ),
+                align="start"
             ),
+
+            # dcc.Dropdown(
+            # ),
 
             dcc.Graph(
                 figure=self.fig,
                 id="ecg_layout",
+                config={
+                    "scrollZoom": True,
+                    "responsive": True
+                },
             ),
 
             html.Div(
                 id="where"
             )
         ])
+        counter = 0
+        counter += 1
 
         @self.app.callback(
             Output(component_id="ecg_layout", component_property="figure"),
             [
-                Input(component_id="drop", component_property="value"),
-                Input(component_id="ecg_layout", component_property="hoverData"),
+                Input(component_id="radio_parameters", component_property="value"),
+                # Input(component_id="ecg_layout", component_property="hoverData"),
                 Input(component_id="ecg_layout", component_property="clickData")
             ]
         )
-        def visual_updater(value, hoverData, clickData):
-            # print(value)
+        def visual_updater(value, clickData):
             self.current_parameter = value
+            self.update_markers()
 
-            for lead, trace in enumerate(self.fig.data[12::]):
-                trace.update(
-                    x=self.get_xy_data(lead)[0],
-                    y=self.get_xy_data(lead)[1],
-                    marker=dict(
-                        color=self.parameters_color[self.current_parameter],
-                        size=6,
-                    ),
-                    mode="markers",
-                    name=f"{str(lead + 12)}"
-                )
-
-            if not clickData:
-                ...
-            else:
+            if clickData:
                 self.last_marked_lead = json.loads(
                     json.dumps(
                         {k: clickData["points"][0][k] for k in ["curveNumber"]}
@@ -188,10 +183,12 @@ class AppECG:
                         if int(coordinates[0]) == x:
                             self.parameters[self.ids[self.current_parameter]][self.sample_number][
                                 self.last_marked_lead % 12].remove(coordinates)
+                    self.update_markers()
                 else:
                     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
                         [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
                     )
+                    self.update_markers()
 
             # update vertical line
             for trace in self.fig.data:
@@ -199,26 +196,18 @@ class AppECG:
 
             return self.fig
 
-        # def update_markers(clickData):
-        #     if not clickData:
-        #         ...
-        #     else:
-        #         self.last_marked_lead = json.loads(
-        #             json.dumps(
-        #                 {k: clickData["points"][0][k] for k in ["curveNumber"]}
-        #             )
-        #         )["curveNumber"]
-        #
-        #         self.last_marked_lead_xy = json.loads(
-        #             json.dumps(
-        #                 {k: clickData["points"][0][k] for k in ["x", "y"]}
-        #             )
-        #         )
-        #
-        #         print(f"Last marked lead: {self.last_marked_lead}")
-        #         self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
-        #             [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
-        #         )
+    def update_markers(self):
+        for lead, trace in enumerate(self.fig.data[12::]):
+            trace.update(
+                x=self.get_xy_data(lead)[0],
+                y=self.get_xy_data(lead)[1],
+                marker=dict(
+                    color=self.parameters_color[self.current_parameter],
+                    size=6,
+                ),
+                mode="markers",
+                name=f"{str(lead + 12)}"
+            )
 
     def get_closest_point_index(self, x):
         # get closets p param in 0 lead
@@ -273,7 +262,10 @@ class AppECG:
                 go.Line(
                     x=[i for i in range(1000)],
                     y=self.ecg_matrix[rows],
-                    name=self.lead_names[rows]
+                    name=self.lead_names[rows],
+                    line=dict(
+                        color="black"
+                    )
                 ),
                 row=rows + 1, col=1,
             )
@@ -307,11 +299,11 @@ class AppECG:
         # self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=False)
         self.fig.update_layout(height=950, width=1500)
-        self.fig.layout.hovermode = 'closest'
-        self.fig.update_layout(
-            margin=dict(l=20, r=20, t=20, b=20),
-            paper_bgcolor="LightSteelBlue",
-        )
+        # self.fig.layout.hovermode = 'closest'
+
+        # self.fig.update_xaxes(visible=False)
+        # self.fig.update_yaxes(visible=False)
+        # self.fig.update_xaxes(zeroline=True)
 
 
 if __name__ == "__main__":
