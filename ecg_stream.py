@@ -3,6 +3,7 @@ import functions as fns
 import plotly.graph_objects as go
 import dash
 import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
 import json
 import os
 
@@ -38,6 +39,9 @@ class AppECG:
         self.lead_names = [
             "i", "ii", "iii", "aVF", "aVR", "aVL", "V1", "V2", "V3", "V4", "V5", "V6"
         ]
+
+        self.grid_minor_bound = self.sampling_rate * self.recording_speed
+        self.step_minor = (self.grid_minor_bound / self.recording_speed) / self.recording_speed
 
         self.fig = make_subplots(
             rows=12, cols=1,
@@ -119,19 +123,21 @@ class AppECG:
 
         self.app.layout = html.Div([
             html.H3("ECG"),
-
-            dbc.Row(
-                dcc.RadioItems(
-                    [parameter for parameter in self.ids.keys()],
-                    inline=True,
-                    id="radio_parameters",
-                    value=self.current_parameter
-                ),
-                align="start"
+            html.Div(
+                [
+                    dbc.RadioItems(
+                        id="radios",
+                        className="btn-group",
+                        inputClassName="btn-check",
+                        labelClassName="btn btn-outline-primary",
+                        labelCheckedClassName="active",
+                        options=[parameter for parameter in self.ids.keys()],
+                        value=self.current_parameter,
+                    ),
+                    html.Div(id="output"),
+                ],
+                className="radio-group",
             ),
-
-            # dcc.Dropdown(
-            # ),
 
             dcc.Graph(
                 figure=self.fig,
@@ -140,26 +146,28 @@ class AppECG:
                     "scrollZoom": True,
                     "responsive": True
                 },
+
             ),
 
             html.Div(
                 id="where"
             )
         ])
-        counter = 0
-        counter += 1
 
         @self.app.callback(
-            Output(component_id="ecg_layout", component_property="figure"),
+            [Output("output", "children"),
+             Output(component_id="ecg_layout", component_property="figure")],
             [
-                Input(component_id="radio_parameters", component_property="value"),
-                # Input(component_id="ecg_layout", component_property="hoverData"),
+                Input("radios", "value"),
                 Input(component_id="ecg_layout", component_property="clickData")
             ]
         )
         def visual_updater(value, clickData):
-            self.current_parameter = value
-            self.update_markers()
+            if value == self.current_parameter:
+                pass
+            else:
+                self.current_parameter = value
+                self.update_markers()
 
             if clickData:
                 self.last_marked_lead = json.loads(
@@ -194,7 +202,7 @@ class AppECG:
             for trace in self.fig.data:
                 trace.update(xaxis="x")
 
-            return self.fig
+            return f"Selected value: {self.current_parameter}", self.fig
 
     def update_markers(self):
         for lead, trace in enumerate(self.fig.data[12::]):
@@ -210,8 +218,6 @@ class AppECG:
             )
 
     def get_closest_point_index(self, x):
-        # get closets p param in 0 lead
-
         p_parameters = self.parameters[self.ids["P"]][self.sample_number][self.last_marked_lead]
 
         dists = [int(np.abs(x - param[0])) for param in p_parameters]
@@ -270,6 +276,7 @@ class AppECG:
                 row=rows + 1, col=1,
             )
 
+        # Add the parameters markers on each subplot
         for rows in range(self.view[self.view_condition][0]):
             self.fig.add_trace(
                 go.Scatter(
@@ -286,6 +293,7 @@ class AppECG:
                 row=rows + 1, col=1,
             )
 
+        # Update the layout by adding the vertical spike
         self.fig.update_layout({
             ax: {
                 "showspikes": True,
@@ -294,16 +302,48 @@ class AppECG:
                 "spikesnap": "cursor",
                 "spikethickness": 2,
                 "spikecolor": "blue"
-            } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"})
+            } for ax in self.fig.to_dict()["layout"] if ax[0:3] == "xax"}
+        )
 
         # self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=False)
         self.fig.update_layout(height=950, width=1500)
-        # self.fig.layout.hovermode = 'closest'
 
-        # self.fig.update_xaxes(visible=False)
-        # self.fig.update_yaxes(visible=False)
-        # self.fig.update_xaxes(zeroline=True)
+        self.fig.update_layout(yaxis_range=[-0.3, 0.5])
+        self.fig.update_layout(xaxis_range=[0, self.sampling_rate * self.recording_time])
+        # style the minor and major grids
+
+        self.fig.update_xaxes(
+            minor=dict(
+                showgrid=True,
+                tickmode="linear",
+                tick0=0,
+                dtick=self.step_minor,
+                gridcolor="rgb(255,182,193)"
+            ),
+
+            tickmode="linear",
+            tick0=0,
+            dtick=self.sampling_rate,
+            gridcolor="red"
+        )
+
+        # update the y-grid
+        # self.fig.update_yaxes(
+        #     minor=dict(
+        #         showgrid=True,
+        #         tick0=1,
+        #         dtick=(self.step_minor / 100) * 2,
+        #         gridcolor="rgb(255,182,193)"
+        #     )
+        # )
+
+        # draw isoline
+        self.fig.update_yaxes(
+            zeroline=True,
+            zerolinecolor="black",
+            zerolinewidth=0.2,
+        )
 
 
 if __name__ == "__main__":
