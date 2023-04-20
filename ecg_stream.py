@@ -6,6 +6,7 @@ import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import json
 import os
+import keyboard
 
 from dash.dependencies import Input, Output
 from dash import dcc
@@ -187,10 +188,10 @@ class AppECG:
                     x, y = self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]
                     for coordinates in self.parameters[self.ids[self.current_parameter]][self.sample_number][
                         self.last_marked_lead % 12]:
-
                         if int(coordinates[0]) == x:
                             self.parameters[self.ids[self.current_parameter]][self.sample_number][
                                 self.last_marked_lead % 12].remove(coordinates)
+
                     self.update_markers()
                 else:
                     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
@@ -202,7 +203,7 @@ class AppECG:
             for trace in self.fig.data:
                 trace.update(xaxis="x")
 
-            return f"Selected value: {self.current_parameter}", self.fig
+            return "", self.fig
 
     def update_markers(self):
         for lead, trace in enumerate(self.fig.data[12::]):
@@ -218,12 +219,12 @@ class AppECG:
             )
 
     def get_closest_point_index(self, x):
-        p_parameters = self.parameters[self.ids["P"]][self.sample_number][self.last_marked_lead]
+        p_parameter = self.parameters[self.ids["P"]][self.sample_number][self.last_marked_lead]
 
-        dists = [int(np.abs(x - param[0])) for param in p_parameters]
+        dists = [int(np.abs(x - param[0])) for param in p_parameter]
         min_dist = np.min(dists)
 
-        return int(p_parameters[dists.index(min_dist)][0])
+        return int(p_parameter[dists.index(min_dist)][0])
 
     def get_xy_data(self, lead):
         parsed_word = self.current_parameter.split("_")
@@ -329,14 +330,11 @@ class AppECG:
         )
 
         # update the y-grid
-        # self.fig.update_yaxes(
-        #     minor=dict(
-        #         showgrid=True,
-        #         tick0=1,
-        #         dtick=(self.step_minor / 100) * 2,
-        #         gridcolor="rgb(255,182,193)"
-        #     )
-        # )
+        self.fig.update_yaxes(
+            tick0=1,
+            dtick=0.6,
+            gridcolor="rgb(255,182,193)"
+        )
 
         # draw isoline
         self.fig.update_yaxes(
@@ -360,6 +358,7 @@ if __name__ == "__main__":
           recording_time,
           recording_speed)
     )
+
     ecg.make_plots()
     ecg.app.run_server(debug=True, use_reloader=False)
     # np.save(ecg.filename, ecg.parameters)
