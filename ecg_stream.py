@@ -3,13 +3,12 @@ import functions as fns
 import plotly.graph_objects as go
 import dash
 import dash_bootstrap_components as dbc
-import dash_mantine_components as dmc
 import json
 import os
 import keyboard
 
 from dash.dependencies import Input, Output
-from dash import dcc
+from dash import dcc, ctx
 from dash import html
 from plotly.subplots import make_subplots
 
@@ -22,8 +21,11 @@ class AppECG:
         self.recording_time = recording_time
         self.view_condition = 1  # which lead interface is chosen
         self.sample_number = 0
+
+        self.bypass = False
+
         self.quantity_samples = data.shape[0]
-        self.ecg_matrix = self.update_matrix()
+        self.ecg_matrix = self.update_matrix_data()
 
         # interface: 6 rows x 2 columns or 12 rows x 1 column
         self.view = {
@@ -79,12 +81,16 @@ class AppECG:
             ),
             shared_xaxes=True,
             horizontal_spacing=0.035,
-            vertical_spacing=0.001,
+            vertical_spacing=0.002,
         )
 
         self.current_parameter = "P"
         self.p_parameter_median = 0
         self.filename = "test.npy"
+
+        # variable that checks if clickData stays the same
+        # It's needed because there is no tool to empty clickData in plotly
+        self.click_data_condition = 1
 
         # If markup file exist take that file as a data else create a new one
         if os.path.exists(self.filename):
@@ -117,13 +123,25 @@ class AppECG:
             "R_Int": 7,
         }
 
+        self.parameters_marker = {
+            "P": "x",
+            "Q": "x",
+            "R": "x",
+            "S": "x",
+            "T": "x",
+            "P_Int": ("triangle-left", "triangle-right"),
+            "Q_Int": ("triangle-left", "triangle-right"),
+            "R_Int": ("triangle-left", "triangle-right"),
+        }
+
         self.last_marked_lead = None
         self.last_marked_lead_xy = None
-
+        self.counter = 0
         self.app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
         self.app.layout = html.Div([
             html.H3("ECG"),
+
             html.Div(
                 [
                     dbc.RadioItems(
@@ -140,37 +158,74 @@ class AppECG:
                 className="radio-group",
             ),
 
+            html.Div(
+                [
+                    dbc.Button(
+                        "bypass_filters",
+                        id="b_pass_f",
+                        value=True,
+                        className="me-1",
+                    ),
+                    html.Div(id="b_pass")
+                ],
+            ),
+
             dcc.Graph(
                 figure=self.fig,
                 id="ecg_layout",
                 config={
-                    "scrollZoom": True,
-                    "responsive": True
+                    "scrollZoom": False,
+                    "responsive": True,
+                    "autosizable": True,
+                    'modeBarButtonsToAdd': [
+                        'drawline',
+                        'eraseshape',
+                    ],
                 },
-
-            ),
-
-            html.Div(
-                id="where"
             )
         ])
 
         @self.app.callback(
-            [Output("output", "children"),
-             Output(component_id="ecg_layout", component_property="figure")],
+            [
+                Output("output", "children"),
+                Output("b_pass", "children"),
+                Output(component_id="ecg_layout", component_property="figure"),
+            ],
+
             [
                 Input("radios", "value"),
-                Input(component_id="ecg_layout", component_property="clickData")
+                Input("b_pass_f", "n_clicks"),
+                Input(component_id="ecg_layout", component_property="clickData"),
+                Input(component_id="ecg_layout", component_property="relayoutData")
             ]
         )
-        def visual_updater(value, clickData):
+        def visual_updater(value, n_clicks, clickData, relayoutData):
+            # if parameter didn't change do ->pass
+            # else update markers
             if value == self.current_parameter:
                 pass
             else:
                 self.current_parameter = value
                 self.update_markers()
 
-            if clickData:
+            # get button id
+            button_clicked = ctx.triggered_id
+
+            if button_clicked == "b_pass_f":
+                self.bypass = not self.bypass
+                self.ecg_matrix = self.update_matrix_data()
+                self.update_matrix()
+                self.update_markers()
+
+            # split the parameter name to check if
+            splited_parameter_name = self.current_parameter.split("_")
+
+            if "Int" in splited_parameter_name and relayoutData["dragmode"] == "drawline":
+                print(relayoutData)
+
+            if clickData and self.click_data_condition != clickData:
+                self.click_data_condition = clickData
+
                 self.last_marked_lead = json.loads(
                     json.dumps(
                         {k: clickData["points"][0][k] for k in ["curveNumber"]}
@@ -184,8 +239,9 @@ class AppECG:
                 )
 
                 # if last marked figure's number is higher than 12 it means that parameter was triggered
-                if self.last_marked_lead >= 12:
+                if self.last_marked_lead >= 12 and keyboard.is_pressed("ctrl") and "Int" not in splited_parameter_name:
                     x, y = self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]
+
                     for coordinates in self.parameters[self.ids[self.current_parameter]][self.sample_number][
                         self.last_marked_lead % 12]:
                         if int(coordinates[0]) == x:
@@ -193,7 +249,8 @@ class AppECG:
                                 self.last_marked_lead % 12].remove(coordinates)
 
                     self.update_markers()
-                else:
+
+                if self.last_marked_lead < 12 and keyboard.is_pressed("ctrl") and "Int" not in splited_parameter_name:
                     self.parameters[self.ids[self.current_parameter]][self.sample_number][self.last_marked_lead].append(
                         [self.last_marked_lead_xy["x"], self.last_marked_lead_xy["y"]]
                     )
@@ -203,16 +260,36 @@ class AppECG:
             for trace in self.fig.data:
                 trace.update(xaxis="x")
 
-            return "", self.fig
+            return "", "", self.fig
+
+    def update_matrix(self):
+        """
+            Update visual part of a graph
+        """
+        for lead, trace in enumerate(self.fig.data[0:12]):
+            trace.update(
+                x=[i for i in range(1000)],
+                y=self.ecg_matrix[lead],
+                name=self.lead_names[lead],
+                line=dict(
+                    color="black"
+                )
+            )
 
     def update_markers(self):
+        """
+        Visual markers updater
+        This function is called whenever the marked parameters has been changed
+        """
+        # get updated traces
         for lead, trace in enumerate(self.fig.data[12::]):
             trace.update(
                 x=self.get_xy_data(lead)[0],
                 y=self.get_xy_data(lead)[1],
                 marker=dict(
                     color=self.parameters_color[self.current_parameter],
-                    size=6,
+                    size=7,
+                    symbol=self.parameters_marker[self.current_parameter]
                 ),
                 mode="markers",
                 name=f"{str(lead + 12)}"
@@ -228,7 +305,6 @@ class AppECG:
 
     def get_xy_data(self, lead):
         parsed_word = self.current_parameter.split("_")
-
         if "Int" not in parsed_word:
             current = np.array(
                 self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]
@@ -245,20 +321,35 @@ class AppECG:
             x = []
             y = []
 
-            for current in self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]:
-                for x_cur, y_cur in current:
-                    x.append(int(x_cur))
-                    y.append(y_cur)
+            for marker in self.parameters[self.ids[self.current_parameter]][self.sample_number][lead]:
+                if len(marker) < 2:
+                    x.append(int(marker[0]))
+                    y.append(marker[1])
+                else:
+                    for x_mark, y_mark in marker:
+                        # print(f"lead: {lead} || x_: {x_mark} || y_: {y_mark}\n")
+                        x.append(int(x_mark))
+                        y.append(y_mark)
 
-            x = np.array(x)
-            y = np.array(y)
-
-            if x.size == 0:
+            if not len(x):
                 return np.array([np.nan]), np.array([np.nan])
+
+            # print(len(x))
+            # x = np.array(x)
+            # y = np.array(y)
+            #
+            # if x.size == 0:
+            #     return np.array([np.nan]), np.array([np.nan])
 
             return x, y
 
-    def update_matrix(self):
+    def update_matrix_data(self):
+        """
+            Update matrix data. If bypass filters then make a matrix of raw signals
+        """
+        if self.bypass:
+            return np.array([self.data[self.sample_number][:, i] for i in range(12)])
+
         return fns.get_clean_matrix(
             np.array([self.data[self.sample_number][:, i] for i in range(12)]), self.sampling_rate
         )
@@ -288,6 +379,7 @@ class AppECG:
                     marker=dict(
                         color=self.parameters_color[self.current_parameter],
                         size=6,
+                        symbol=self.parameters_marker[self.current_parameter]
                     ),
                     hoverinfo="name + x + y"
                 ),
@@ -308,7 +400,8 @@ class AppECG:
 
         # self.fig.update_traces(xaxis="x")
         self.fig.update_layout(showlegend=False)
-        self.fig.update_layout(height=950, width=1500)
+        self.fig.update_layout(height=2000, width=2000)
+        # self.fig.update_layout(clickmode="event+select")
 
         self.fig.update_layout(yaxis_range=[-0.3, 0.5])
         self.fig.update_layout(xaxis_range=[0, self.sampling_rate * self.recording_time])
@@ -332,7 +425,7 @@ class AppECG:
         # update the y-grid
         self.fig.update_yaxes(
             tick0=1,
-            dtick=0.6,
+            dtick=0.4,
             gridcolor="rgb(255,182,193)"
         )
 
