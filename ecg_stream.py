@@ -7,10 +7,12 @@ import json
 import os
 import keyboard
 
+from dash_app import create_dash_app
 from dash.dependencies import Input, Output
 from dash import dcc, ctx
 from dash import html
 from plotly.subplots import make_subplots
+from flask import Flask
 
 
 class AppECG:
@@ -23,6 +25,7 @@ class AppECG:
         self.sample_number = 0
 
         self.bypass = False
+        self.dragmode = True
 
         self.quantity_samples = data.shape[0]
         self.ecg_matrix = self.update_matrix_data()
@@ -82,6 +85,7 @@ class AppECG:
             shared_xaxes=True,
             horizontal_spacing=0.035,
             vertical_spacing=0.002,
+
         )
 
         self.current_parameter = "P"
@@ -134,9 +138,12 @@ class AppECG:
             "R_Int": ("triangle-left", "triangle-right"),
         }
 
+        # keyboard.add_hotkey("alt", self.keyboard_call_drawline)
+
         self.last_marked_lead = None
         self.last_marked_lead_xy = None
         self.counter = 0
+
         self.app = dash.Dash(external_stylesheets=[dbc.themes.BOOTSTRAP])
 
         self.app.layout = html.Div([
@@ -185,6 +192,9 @@ class AppECG:
             )
         ])
 
+        # Init app with flask
+        # self.app = create_dash_app(Flask(__name__), self.fig)
+
         @self.app.callback(
             [
                 Output("output", "children"),
@@ -200,12 +210,19 @@ class AppECG:
             ]
         )
         def visual_updater(value, n_clicks, clickData, relayoutData):
+            # split the parameter name to check if the parameter is interval
+            splited_parameter_name = value.split("_")
+
             # if parameter didn't change do ->pass
             # else update markers
             if value == self.current_parameter:
                 pass
             else:
                 self.current_parameter = value
+
+                if "Int" in splited_parameter_name:
+                    self.fig.update_layout(dragmode="drawline")
+
                 self.update_markers()
 
             # get button id
@@ -216,12 +233,6 @@ class AppECG:
                 self.ecg_matrix = self.update_matrix_data()
                 self.update_matrix()
                 self.update_markers()
-
-            # split the parameter name to check if
-            splited_parameter_name = self.current_parameter.split("_")
-
-            if "Int" in splited_parameter_name and relayoutData["dragmode"] == "drawline":
-                print(relayoutData)
 
             if clickData and self.click_data_condition != clickData:
                 self.click_data_condition = clickData
@@ -261,6 +272,9 @@ class AppECG:
                 trace.update(xaxis="x")
 
             return "", "", self.fig
+
+    def keyboard_call_drawline(self):
+        return self.fig.update_layout(dragmode="drawline")
 
     def update_matrix(self):
         """
@@ -403,6 +417,7 @@ class AppECG:
         self.fig.update_layout(height=2000, width=2000)
         # self.fig.update_layout(clickmode="event+select")
 
+        # self.fig.update_layout(autosize=False)
         self.fig.update_layout(yaxis_range=[-0.3, 0.5])
         self.fig.update_layout(xaxis_range=[0, self.sampling_rate * self.recording_time])
         # style the minor and major grids
@@ -453,5 +468,5 @@ if __name__ == "__main__":
     )
 
     ecg.make_plots()
-    ecg.app.run_server(debug=True, use_reloader=False)
+    ecg.app.run_server(debug=True, use_reloader=True)
     # np.save(ecg.filename, ecg.parameters)
